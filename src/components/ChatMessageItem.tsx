@@ -68,7 +68,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         title="Tap or right-click to edit, react, or apply theme effects"
         style={{
           cursor: 'pointer',
-          maxWidth: '82%',
+          maxWidth: '78%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: isMe ? 'flex-end' : 'flex-start'
@@ -169,6 +169,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             ) : (
               <div
                 style={{
+                  display: 'inline-block',
                   width: 'fit-content',
                   maxWidth: '100%',
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
@@ -180,7 +181,8 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                   fontSize: '14.5px',
                   lineHeight: '19.5px',
                   wordBreak: 'break-word',
-                  textAlign: isMe ? 'right' : 'left',
+                  textWrap: 'balance',
+                  textAlign: 'left',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
                 }}
               >

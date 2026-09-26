@@ -173,7 +173,8 @@ export const AestheticLyricsBubble: React.FC<AestheticLyricsBubbleProps> = ({
     lineHeight: '19px',
     wordBreak: 'break-word',
     fontFamily: fontFamily,
-    textAlign: isFromMe ? 'right' : 'left',
+    textAlign: 'left',
+    textWrap: 'balance',
     userSelect: 'none'
   };
 
