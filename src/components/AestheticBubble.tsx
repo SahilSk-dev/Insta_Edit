@@ -12,7 +12,6 @@ interface RubyHeartProps {
 
 export const RubyHeart: React.FC<RubyHeartProps> = ({ size, rotation = 0, style }) => {
   const gradientId = `rubyGrad_${Math.random().toString(36).substring(2, 9)}`;
-  const filterId = `rubyGlow_${Math.random().toString(36).substring(2, 9)}`;
 
   return (
     <svg
@@ -21,9 +20,10 @@ export const RubyHeart: React.FC<RubyHeartProps> = ({ size, rotation = 0, style 
       viewBox="0 0 100 100"
       style={{
         transform: `rotate(${rotation}deg)`,
-        filter: 'drop-shadow(0 6px 12px rgba(255, 22, 84, 0.65))',
+        filter: 'drop-shadow(0 2px 6px rgba(255, 22, 84, 0.6))',
         position: 'absolute',
         pointerEvents: 'none',
+        zIndex: 4,
         ...style
       }}
     >
@@ -73,9 +73,10 @@ export const GlowingButterfly: React.FC<GlowingButterflyProps> = ({
       viewBox="0 0 100 100"
       style={{
         transform: `rotate(${rotation}deg)`,
-        filter: `drop-shadow(0 4px 10px ${primaryColor}99)`,
+        filter: `drop-shadow(0 2px 6px ${primaryColor}88)`,
         position: 'absolute',
         pointerEvents: 'none',
+        zIndex: 4,
         ...style
       }}
     >
@@ -132,9 +133,10 @@ export const LuxeSparkle: React.FC<LuxeSparkleProps> = ({ size, rotation = 0, st
       viewBox="0 0 100 100"
       style={{
         transform: `rotate(${rotation}deg)`,
-        filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.7))',
+        filter: 'drop-shadow(0 2px 6px rgba(255, 215, 0, 0.6))',
         position: 'absolute',
         pointerEvents: 'none',
+        zIndex: 4,
         ...style
       }}
     >
@@ -159,10 +161,12 @@ export const LuxeSparkle: React.FC<LuxeSparkleProps> = ({ size, rotation = 0, st
 
 // -------------------------------------------------------------------------
 // Themed Styled Lyrics Bubble Wrapper
+// Compact: Normal chat bubble size + Glowing Border + Tasteful Accents
 // -------------------------------------------------------------------------
 interface AestheticLyricsBubbleProps {
   text: string;
   theme: BubbleTheme;
+  isFromMe?: boolean;
   fontFamily?: string;
   onClick?: () => void;
 }
@@ -170,9 +174,13 @@ interface AestheticLyricsBubbleProps {
 export const AestheticLyricsBubble: React.FC<AestheticLyricsBubbleProps> = ({
   text,
   theme,
+  isFromMe = false,
   fontFamily = 'inherit',
   onClick
 }) => {
+  // Exact same border radius as normal Instagram bubble
+  const normalBorderRadius = isFromMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px';
+
   if (theme === 'OBSIDIAN_HEART') {
     return (
       <div
@@ -180,55 +188,32 @@ export const AestheticLyricsBubble: React.FC<AestheticLyricsBubbleProps> = ({
         style={{
           position: 'relative',
           display: 'inline-block',
-          padding: '10px 14px',
-          cursor: 'pointer',
-          userSelect: 'none'
+          maxWidth: 280
         }}
       >
-        {/* 1. Big Heart (Top-Left) */}
-        <RubyHeart size={54} rotation={-22} style={{ top: -14, left: -12, zIndex: 3 }} />
+        {/* Subtle cute Ruby Hearts gently hugging the border */}
+        <RubyHeart size={20} rotation={-18} style={{ top: -7, right: -5 }} />
+        <RubyHeart size={14} rotation={14} style={{ top: -5, left: 16 }} />
+        <RubyHeart size={16} rotation={15} style={{ bottom: -5, right: 14 }} />
 
-        {/* 2. Medium Heart (Bottom-Left) */}
-        <RubyHeart size={36} rotation={16} style={{ bottom: -6, left: 16, zIndex: 3 }} />
-
-        {/* 3. Medium Heart (Top-Right-Center) */}
-        <RubyHeart size={32} rotation={18} style={{ top: -12, right: 68, zIndex: 3 }} />
-
-        {/* 4. Large Heart (Top-Right) */}
-        <RubyHeart size={44} rotation={24} style={{ top: -4, right: -12, zIndex: 3 }} />
-
-        {/* 5. Small-Medium Heart (Bottom-Right) */}
-        <RubyHeart size={34} rotation={-14} style={{ bottom: -6, right: 8, zIndex: 3 }} />
-
-        {/* Center Capsule Pill with Glowing Neon Border */}
+        {/* Normal-sized Chat Bubble with Glowing Neon Border */}
         <div
           style={{
             position: 'relative',
             zIndex: 2,
             background: 'linear-gradient(135deg, #1B0C16 0%, #2A0822 50%, #150616 100%)',
-            border: '1.8px solid #FF2A6D',
-            borderRadius: 9999,
-            padding: '12px 28px',
-            boxShadow: '0 0 24px rgba(255, 42, 109, 0.6), inset 0 0 10px rgba(255, 42, 109, 0.25)',
-            textAlign: 'center',
-            minWidth: 80,
-            maxWidth: 290,
-            wordBreak: 'break-word'
+            border: '1.5px solid #FF2A6D',
+            borderRadius: normalBorderRadius,
+            padding: '10px 16px',
+            boxShadow: '0 0 12px rgba(255, 42, 109, 0.45), inset 0 0 6px rgba(255, 42, 109, 0.2)',
+            color: '#FFFFFF',
+            fontSize: 15,
+            lineHeight: '20px',
+            wordBreak: 'break-word',
+            fontFamily: fontFamily
           }}
         >
-          <span
-            style={{
-              color: '#FFFFFF',
-              fontSize: '15px',
-              fontWeight: 700,
-              fontFamily: fontFamily,
-              lineHeight: 1.4,
-              letterSpacing: '0.3px',
-              textShadow: '0 1px 4px rgba(0, 0, 0, 0.8)'
-            }}
-          >
-            {text}
-          </span>
+          {text}
         </div>
       </div>
     );
@@ -241,71 +226,43 @@ export const AestheticLyricsBubble: React.FC<AestheticLyricsBubbleProps> = ({
         style={{
           position: 'relative',
           display: 'inline-block',
-          padding: '10px 14px',
-          cursor: 'pointer',
-          userSelect: 'none'
+          maxWidth: 280
         }}
       >
-        {/* Top-Left Butterfly */}
+        {/* Cute compact butterflies hugging corners */}
         <GlowingButterfly
-          size={46}
-          rotation={-26}
+          size={22}
+          rotation={-20}
           primaryColor="#00E5FF"
           secondaryColor="#D500F9"
-          style={{ top: -14, left: -14, zIndex: 3 }}
+          style={{ top: -8, right: -6 }}
         />
-
-        {/* Bottom-Right Butterfly */}
         <GlowingButterfly
-          size={40}
-          rotation={20}
+          size={16}
+          rotation={18}
           primaryColor="#FF4081"
           secondaryColor="#7C4DFF"
-          style={{ bottom: -8, right: 10, zIndex: 3 }}
+          style={{ bottom: -6, left: 14 }}
         />
 
-        {/* Top-Right Mini Butterfly */}
-        <GlowingButterfly
-          size={28}
-          rotation={15}
-          primaryColor="#69F0AE"
-          secondaryColor="#40C4FF"
-          style={{ top: -8, right: 12, zIndex: 3 }}
-        />
-
-        {/* Center Capsule */}
+        {/* Normal-sized Chat Bubble with Midnight Glow */}
         <div
           style={{
             position: 'relative',
             zIndex: 2,
             background: 'linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%)',
-            border: '1.8px solid transparent',
-            backgroundImage:
-              'linear-gradient(135deg, #0F0C29, #302B63, #24243E), linear-gradient(135deg, #00E5FF, #D500F9)',
-            backgroundOrigin: 'border-box',
-            backgroundClip: 'padding-box, border-box',
-            borderRadius: 9999,
-            padding: '12px 28px',
-            boxShadow: '0 0 22px rgba(213, 0, 249, 0.45), 0 0 12px rgba(0, 229, 255, 0.4)',
-            textAlign: 'center',
-            minWidth: 80,
-            maxWidth: 290,
-            wordBreak: 'break-word'
+            border: '1.5px solid #00E5FF',
+            borderRadius: normalBorderRadius,
+            padding: '10px 16px',
+            boxShadow: '0 0 12px rgba(0, 229, 255, 0.4), 0 0 6px rgba(213, 0, 249, 0.3)',
+            color: '#FFFFFF',
+            fontSize: 15,
+            lineHeight: '20px',
+            wordBreak: 'break-word',
+            fontFamily: fontFamily
           }}
         >
-          <span
-            style={{
-              color: '#FFFFFF',
-              fontSize: '15px',
-              fontWeight: 700,
-              fontFamily: fontFamily,
-              lineHeight: 1.4,
-              letterSpacing: '0.3px',
-              textShadow: '0 1px 4px rgba(0, 0, 0, 0.8)'
-            }}
-          >
-            {text}
-          </span>
+          {text}
         </div>
       </div>
     );
@@ -318,40 +275,29 @@ export const AestheticLyricsBubble: React.FC<AestheticLyricsBubbleProps> = ({
         style={{
           position: 'relative',
           display: 'inline-block',
-          padding: '8px 12px',
-          cursor: 'pointer',
-          userSelect: 'none'
+          maxWidth: 280
         }}
       >
-        <LuxeSparkle size={24} rotation={45} style={{ top: -6, left: -6, zIndex: 3 }} />
-        <LuxeSparkle size={28} rotation={15} style={{ bottom: -6, right: 4, zIndex: 3 }} />
+        <LuxeSparkle size={18} rotation={45} style={{ top: -6, right: -5 }} />
+        <LuxeSparkle size={14} rotation={15} style={{ bottom: -5, left: 12 }} />
 
         <div
           style={{
             position: 'relative',
             zIndex: 2,
-            background: 'linear-gradient(135deg, #051923 0%, #003554 50%, #006494 100%)',
-            border: '2px solid #00F0FF',
-            borderRadius: 24,
-            padding: '11px 24px',
-            boxShadow: '0 0 20px rgba(0, 240, 255, 0.6), inset 0 0 10px rgba(0, 240, 255, 0.2)',
-            textAlign: 'center',
-            minWidth: 80,
-            maxWidth: 290,
-            wordBreak: 'break-word'
+            background: 'linear-gradient(135deg, #051923 0%, #003554 100%)',
+            border: '1.5px solid #00F0FF',
+            borderRadius: normalBorderRadius,
+            padding: '10px 16px',
+            boxShadow: '0 0 12px rgba(0, 240, 255, 0.5), inset 0 0 6px rgba(0, 240, 255, 0.2)',
+            color: '#E0FBFC',
+            fontSize: 15,
+            lineHeight: '20px',
+            wordBreak: 'break-word',
+            fontFamily: fontFamily
           }}
         >
-          <span
-            style={{
-              color: '#E0FBFC',
-              fontSize: '15px',
-              fontWeight: 700,
-              fontFamily: fontFamily,
-              lineHeight: 1.4
-            }}
-          >
-            {text}
-          </span>
+          {text}
         </div>
       </div>
     );
@@ -364,41 +310,29 @@ export const AestheticLyricsBubble: React.FC<AestheticLyricsBubbleProps> = ({
         style={{
           position: 'relative',
           display: 'inline-block',
-          padding: '8px 12px',
-          cursor: 'pointer',
-          userSelect: 'none'
+          maxWidth: 280
         }}
       >
-        <LuxeSparkle size={32} rotation={12} style={{ top: -8, left: -8, zIndex: 3 }} />
-        <LuxeSparkle size={26} rotation={35} style={{ top: -6, right: 8, zIndex: 3 }} />
-        <LuxeSparkle size={30} rotation={-20} style={{ bottom: -6, right: 6, zIndex: 3 }} />
+        <LuxeSparkle size={20} rotation={12} style={{ top: -7, right: -5 }} />
+        <LuxeSparkle size={15} rotation={-20} style={{ bottom: -5, left: 14 }} />
 
         <div
           style={{
             position: 'relative',
             zIndex: 2,
-            background: 'linear-gradient(135deg, #2C1E03 0%, #4A3408 50%, #1E1402 100%)',
-            border: '2px solid #FFD700',
-            borderRadius: 9999,
-            padding: '12px 28px',
-            boxShadow: '0 0 22px rgba(255, 215, 0, 0.55), inset 0 0 8px rgba(255, 215, 0, 0.25)',
-            textAlign: 'center',
-            minWidth: 80,
-            maxWidth: 290,
-            wordBreak: 'break-word'
+            background: 'linear-gradient(135deg, #2C1E03 0%, #4A3408 100%)',
+            border: '1.5px solid #FFD700',
+            borderRadius: normalBorderRadius,
+            padding: '10px 16px',
+            boxShadow: '0 0 12px rgba(255, 215, 0, 0.45), inset 0 0 6px rgba(255, 215, 0, 0.2)',
+            color: '#FFFDF0',
+            fontSize: 15,
+            lineHeight: '20px',
+            wordBreak: 'break-word',
+            fontFamily: fontFamily
           }}
         >
-          <span
-            style={{
-              color: '#FFFDF0',
-              fontSize: '15px',
-              fontWeight: 700,
-              fontFamily: fontFamily,
-              lineHeight: 1.4
-            }}
-          >
-            {text}
-          </span>
+          {text}
         </div>
       </div>
     );

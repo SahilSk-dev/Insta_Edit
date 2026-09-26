@@ -162,6 +162,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
               <AestheticLyricsBubble
                 text={message.text}
                 theme={message.theme}
+                isFromMe={isMe}
               />
             ) : (
               <div
