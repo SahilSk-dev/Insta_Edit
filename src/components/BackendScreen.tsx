@@ -11,6 +11,7 @@ import {
   PlusIcon
 } from './InstagramIcons';
 import { ClearChatModal } from './ClearChatModal';
+import { CropAvatarModal } from './CropAvatarModal';
 
 interface BackendScreenProps {
   currentProfile: ChatProfile;
@@ -77,14 +78,15 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
     { key: 'GOLDEN_LUXE', label: '✨ Luxe' }
   ];
 
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+
   const handleCustomDpUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setAvatarName(event.target.result as string);
-          onToast('Custom DP selected!');
+          setCropImageSrc(event.target.result as string);
         }
       };
       reader.readAsDataURL(file);
@@ -136,6 +138,20 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
       onToast('Message edited successfully!');
     }
   };
+
+  if (cropImageSrc) {
+    return (
+      <CropAvatarModal
+        imageSrc={cropImageSrc}
+        onApply={(croppedDataUrl) => {
+          setAvatarName(croppedDataUrl);
+          setCropImageSrc(null);
+          onToast('Profile picture cropped & updated!');
+        }}
+        onCancel={() => setCropImageSrc(null)}
+      />
+    );
+  }
 
   return (
     <div

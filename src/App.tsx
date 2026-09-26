@@ -15,6 +15,7 @@ import { ChangeAvatarModal } from './components/ChangeAvatarModal';
 import { MessageActionModal } from './components/MessageActionModal';
 import { ClearChatModal } from './components/ClearChatModal';
 import { ScreenshotModal } from './components/ScreenshotModal';
+import { SenderSelectModal } from './components/SenderSelectModal';
 
 export const App: React.FC = () => {
   // Persistence with localStorage
@@ -23,7 +24,9 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem('insta_chat_profile');
       if (saved) {
         const parsed = JSON.parse(saved);
-        parsed.avatarName = 'sahil_avatar';
+        if (!parsed.avatarName || parsed.avatarName === 'avatar_cyber_samurai' || parsed.avatarName === 'avatar_gold_tiger') {
+          parsed.avatarName = 'sahil_avatar';
+        }
         if (!parsed.handle || parsed.handle === 'md.sahil_sk_') {
           parsed.handle = 'not__ur__sahil_77';
         }
@@ -70,6 +73,7 @@ export const App: React.FC = () => {
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [selectedMessageForAction, setSelectedMessageForAction] = useState<ChatMessage | null>(null);
   const [capturedScreenshotUrl, setCapturedScreenshotUrl] = useState<string | null>(null);
+  const [pendingMessageText, setPendingMessageText] = useState<string | null>(null);
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -407,8 +411,7 @@ export const App: React.FC = () => {
               onMessageChange={setInputText}
               onSendClick={() => {
                 if (inputText.trim()) {
-                  handleSendMessage(inputText.trim(), true);
-                  setInputText('');
+                  setPendingMessageText(inputText.trim());
                 }
               }}
               onCameraClick={() => {
@@ -532,6 +535,22 @@ export const App: React.FC = () => {
             name={profile.name}
             avatarName={profile.avatarName}
             onEndCall={() => setShowVideoCall(false)}
+          />
+        )}
+
+        {/* Modal: Select Sender (Ami vs Sahil) */}
+        {pendingMessageText && (
+          <SenderSelectModal
+            messageText={pendingMessageText}
+            sahilName={profile.name}
+            sahilHandle={profile.handle}
+            sahilAvatar={profile.avatarName}
+            onSelectSender={(isFromMe) => {
+              handleSendMessage(pendingMessageText, isFromMe);
+              setPendingMessageText(null);
+              setInputText('');
+            }}
+            onDismiss={() => setPendingMessageText(null)}
           />
         )}
 

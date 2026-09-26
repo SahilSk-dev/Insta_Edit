@@ -21,8 +21,17 @@ export const availableAvatars: AvatarOption[] = [
   { id: 'sahil_avatar', name: 'Sahil Sk', url: '/avatars/sahil_avatar.jpg' }
 ];
 
-export const getAvatarUrl = (_avatarName?: string): string => {
-  return '/avatars/sahil_avatar.jpg';
+export const getAvatarUrl = (avatarName?: string): string => {
+  if (!avatarName) return '/avatars/sahil_avatar.jpg';
+  if (avatarName.startsWith('data:') || avatarName.startsWith('blob:') || avatarName.startsWith('http')) {
+    return avatarName;
+  }
+  if (avatarName === 'sahil_avatar') {
+    return '/avatars/sahil_avatar.jpg';
+  }
+  const match = availableAvatars.find((a) => a.id === avatarName);
+  if (match) return match.url;
+  return avatarName.startsWith('/') ? avatarName : `/avatars/${avatarName}`;
 };
 
 export const initialMessages: ChatMessage[] = [
