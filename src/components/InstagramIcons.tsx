@@ -74,6 +74,16 @@ export const InstagramSmileyBubbleIcon: React.FC<IconProps> = ({ size = 24, colo
   </svg>
 );
 
+export const InstagramStickerIcon: React.FC<IconProps> = ({ size = 22, color = '#FFFFFF', style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <path d="M15 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V9l-6-6z" />
+    <path d="M15 3v6h6" />
+    <circle cx="9" cy="13" r="0.75" fill={color} />
+    <circle cx="15" cy="13" r="0.75" fill={color} />
+    <path d="M9 16c1 1 3 1 4 0" />
+  </svg>
+);
+
 export const BackIcon: React.FC<IconProps> = ({ size = 24, color = '#FFFFFF', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <line x1="19" y1="12" x2="5" y2="12" />

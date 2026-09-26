@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { CameraIcon, MicIcon, GalleryIcon, PlusIcon } from './InstagramIcons';
+import { CameraIcon, MicIcon, GalleryIcon, InstagramStickerIcon } from './InstagramIcons';
 
 interface ChatInputBarProps {
   messageText: string;
@@ -102,8 +102,8 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
             type="button"
             title="Send photo"
             style={{
-              width: 38,
-              height: 38,
+              width: 36,
+              height: 36,
               borderRadius: '50%',
               backgroundColor: '#0095F6',
               border: 'none',
@@ -121,13 +121,15 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
           <div
             style={{
               flex: 1,
+              minWidth: 0,
               height: 42,
               borderRadius: 21,
               backgroundColor: '#262626',
               display: 'flex',
               alignItems: 'center',
               paddingLeft: 14,
-              paddingRight: 6
+              paddingRight: 6,
+              boxSizing: 'border-box'
             }}
           >
             {/* Input field - type="search" + autocomplete="off" disables password/card autofill toolbar in Chrome */}
@@ -150,6 +152,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
               placeholder="Message..."
               style={{
                 flex: 1,
+                minWidth: 0,
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
@@ -161,35 +164,24 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
             />
 
             {messageText.trim().length > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span
-                  style={{
-                    fontSize: 17,
-                    padding: '0 4px',
-                    userSelect: 'none',
-                    cursor: 'default'
-                  }}
-                >
-                  😀
-                </span>
-                <button
-                  type="button"
-                  onClick={onSendClick}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#0095F6',
-                    fontSize: 14.5,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    padding: '6px 8px'
-                  }}
-                >
-                  Send
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onSendClick}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#0095F6',
+                  fontSize: 14.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: '6px 10px',
+                  flexShrink: 0
+                }}
+              >
+                Send
+              </button>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
                 {/* Voice Note Button */}
                 <button
                   type="button"
@@ -204,7 +196,9 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    padding: 0,
+                    flexShrink: 0
                   }}
                 >
                   <MicIcon size={20} />
@@ -224,37 +218,19 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    padding: 0,
+                    flexShrink: 0
                   }}
                 >
                   <GalleryIcon size={20} />
                 </button>
 
-                {/* Emoji Sticker Button */}
-                <button
-                  type="button"
-                  onClick={() => onMessageChange('❤️')}
-                  title="Quick emoji"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    width: 32,
-                    height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    fontSize: 17
-                  }}
-                >
-                  😀
-                </button>
-
-                {/* Plus / More Actions Button */}
+                {/* Sticker Button */}
                 <button
                   type="button"
                   onClick={onPlusClick}
-                  title="Quick actions"
+                  title="Sticker"
                   style={{
                     background: 'none',
                     border: 'none',
@@ -264,10 +240,12 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    padding: 0,
+                    flexShrink: 0
                   }}
                 >
-                  <PlusIcon size={20} />
+                  <InstagramStickerIcon size={20} />
                 </button>
               </div>
             )}

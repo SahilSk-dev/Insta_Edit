@@ -280,6 +280,8 @@ export const App: React.FC = () => {
               overflowX: 'hidden',
               WebkitOverflowScrolling: 'touch',
               overscrollBehavior: 'contain',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
               display: 'flex',
               flexDirection: 'column',
               paddingBottom: 8

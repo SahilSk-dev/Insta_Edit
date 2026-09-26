@@ -28,7 +28,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         display: 'flex',
         justifyContent: isMe ? 'flex-end' : 'flex-start',
         alignItems: 'flex-end',
-        padding: '3px 12px',
+        padding: isMe ? '2px 8px 2px 14px' : '2px 14px 2px 8px',
         width: '100%',
         boxSizing: 'border-box'
       }}
@@ -58,7 +58,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         </div>
       )}
 
-      {/* Message content container: tightened to 75% max width */}
+      {/* Message content container */}
       <div
         onClick={() => onMessageClick(message)}
         onContextMenu={(e) => {
@@ -68,7 +68,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         title="Tap or right-click to edit, react, or apply theme effects"
         style={{
           cursor: 'pointer',
-          maxWidth: '75%',
+          maxWidth: '82%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: isMe ? 'flex-end' : 'flex-start'
