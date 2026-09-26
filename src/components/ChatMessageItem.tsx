@@ -181,7 +181,6 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                   fontSize: '14.5px',
                   lineHeight: '19.5px',
                   wordBreak: 'break-word',
-                  textWrap: 'balance',
                   textAlign: 'left',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
                 }}

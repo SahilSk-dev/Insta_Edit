@@ -174,7 +174,6 @@ export const AestheticLyricsBubble: React.FC<AestheticLyricsBubbleProps> = ({
     wordBreak: 'break-word',
     fontFamily: fontFamily,
     textAlign: 'left',
-    textWrap: 'balance',
     userSelect: 'none'
   };
 
