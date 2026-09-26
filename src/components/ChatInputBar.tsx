@@ -37,10 +37,31 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    // Detect double space (both direct '  ' and mobile virtual keyboard '. ')
+    if (val.endsWith('  ')) {
+      onToggleSender();
+      onMessageChange(val.slice(0, -2));
+    } else if (messageText.endsWith(' ') && (val === messageText.slice(0, -1) + '. ' || val === messageText + '. ')) {
+      onToggleSender();
+      onMessageChange(messageText.trimEnd());
+    } else if (!messageText && (val === '  ' || val === '. ')) {
+      onToggleSender();
+      onMessageChange('');
+    } else {
+      onMessageChange(val);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       onSendClick();
+    } else if (e.key === ' ' && messageText.endsWith(' ')) {
+      e.preventDefault();
+      onToggleSender();
+      onMessageChange(messageText.trimEnd());
     }
   };
 
@@ -156,7 +177,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
               data-1p-ignore="true"
               data-bwignore="true"
               value={messageText}
-              onChange={(e) => onMessageChange(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="Message..."
               style={{
