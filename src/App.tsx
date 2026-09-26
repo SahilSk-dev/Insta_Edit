@@ -1,473 +1,605 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
-import { initialProfileConfig, initialMessages, ProfileConfig, ChatMessage } from './config/profile.ts';
-import { renderWithIOSEmojis } from './utils/emoji.tsx';
+import { ChatProfile, ChatMessage, BubbleTheme } from './types/chat';
+import { initialProfile, initialMessages, sahilResponses } from './data/initialData';
+import { ChatTopBar } from './components/ChatTopBar';
+import { ChatHeader } from './components/ChatHeader';
+import { ChatMessageItem } from './components/ChatMessageItem';
+import { ChatInputBar } from './components/ChatInputBar';
+import { BackendScreen } from './components/BackendScreen';
+import { VideoCallOverlay } from './components/VideoCallOverlay';
+import { UserProfileModal } from './components/UserProfileModal';
+import { SafetyTipsModal } from './components/SafetyTipsModal';
+import { BlockUserModal } from './components/BlockUserModal';
+import { ChangeAvatarModal } from './components/ChangeAvatarModal';
+import { MessageActionModal } from './components/MessageActionModal';
+import { ClearChatModal } from './components/ClearChatModal';
+import { ScreenshotModal } from './components/ScreenshotModal';
 
-export default function App() {
-  const [config, setConfig] = useState<ProfileConfig>(() => {
-    const saved = localStorage.getItem('ig_dm_config');
-    return saved ? JSON.parse(saved) : initialProfileConfig;
+export const App: React.FC = () => {
+  // Persistence with localStorage
+  const [profile, setProfile] = useState<ChatProfile>(() => {
+    try {
+      const saved = localStorage.getItem('insta_chat_profile');
+      return saved ? JSON.parse(saved) : initialProfile;
+    } catch {
+      return initialProfile;
+    }
   });
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem('ig_dm_messages');
-    return saved ? JSON.parse(saved) : initialMessages;
+    try {
+      const saved = localStorage.getItem('insta_chat_messages');
+      return saved ? JSON.parse(saved) : initialMessages;
+    } catch {
+      return initialMessages;
+    }
   });
 
-  const [inputText, setInputText] = useState('');
-  const [sendAsMe, setSendAsMe] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
-  const [activeDeleteId, setActiveDeleteId] = useState<string | null>(null);
-
-  // Long Screenshot Popup State
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
-
-  const mainContainerRef = useRef<HTMLDivElement>(null);
-  const chatBodyRef = useRef<HTMLDivElement>(null);
-
-  // Save to localStorage so edits on mobile persist
   useEffect(() => {
-    localStorage.setItem('ig_dm_config', JSON.stringify(config));
-  }, [config]);
+    try {
+      localStorage.setItem('insta_chat_profile', JSON.stringify(profile));
+    } catch {}
+  }, [profile]);
 
   useEffect(() => {
-    localStorage.setItem('ig_dm_messages', JSON.stringify(messages));
-    if (chatBodyRef.current) {
-      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
-    }
+    try {
+      localStorage.setItem('insta_chat_messages', JSON.stringify(messages));
+    } catch {}
   }, [messages]);
 
-  const handleSendMessage = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!inputText.trim()) return;
+  const [currentScreen, setCurrentScreen] = useState<'DM' | 'BACKEND'>('DM');
+  const [isTyping, setIsTyping] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const [responseIndex, setResponseIndex] = useState(0);
 
+  // UI Modals
+  const [showSafetyTips, setShowSafetyTips] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [showProfileSheet, setShowProfileSheet] = useState(false);
+  const [showChangeAvatar, setShowChangeAvatar] = useState(false);
+  const [showClearChat, setShowClearChat] = useState(false);
+  const [showVideoCall, setShowVideoCall] = useState(false);
+  const [selectedMessageForAction, setSelectedMessageForAction] = useState<ChatMessage | null>(null);
+  const [capturedScreenshotUrl, setCapturedScreenshotUrl] = useState<string | null>(null);
+
+  // Desktop presentation toggle
+  const [isFrameMode, setIsFrameMode] = useState(true);
+
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 2400);
+  };
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollContainerRef = useRef<HTMLDivElement>(null);
+  const captureAreaRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping, currentScreen]);
+
+  const getCurrentTime = (): string => {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Send message handler with auto-reply
+  const handleSendMessage = (
+    text: string,
+    isFromMe: boolean = true,
+    type: 'TEXT' | 'IMAGE' | 'AUDIO' | 'STICKER' = 'TEXT',
+    imageResName?: string,
+    audioDuration?: string,
+    theme: BubbleTheme = 'CLASSIC',
+    customTimestamp?: string
+  ) => {
+    if (profile.isBlocked && isFromMe) {
+      showToast('You cannot message a blocked user.');
+      return;
+    }
+
+    const time = customTimestamp || getCurrentTime();
     const newMsg: ChatMessage = {
-      id: Date.now().toString(),
-      text: inputText.trim(),
-      sender: sendAsMe ? 'me' : 'them'
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      text,
+      isFromMe,
+      timestamp: time,
+      type,
+      imageResName,
+      audioDuration,
+      theme,
+      orderIndex: Date.now()
     };
 
     setMessages((prev) => [...prev, newMsg]);
-    setInputText('');
-  };
 
-  const handleDeleteMessage = (id: string) => {
-    setMessages((prev) => prev.filter((m) => m.id !== id));
-    setActiveDeleteId(null);
-  };
+    // Intelligent auto-reply simulation
+    if (isFromMe && profile.autoReplyEnabled) {
+      setTimeout(() => {
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          const replyText = sahilResponses[responseIndex % sahilResponses.length];
+          setResponseIndex((i) => i + 1);
 
-  const getFontClass = () => {
-    switch (config.activeFont) {
-      case 'bonolota': return 'font-bonolota';
-      case 'chirkut': return 'font-chirkut';
-      case 'mahfuj': return 'font-mahfuj';
-      default: return 'font-system';
+          const replyMsg: ChatMessage = {
+            id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            text: replyText,
+            isFromMe: false,
+            timestamp: getCurrentTime(),
+            type: 'TEXT',
+            theme: 'CLASSIC',
+            orderIndex: Date.now()
+          };
+
+          setMessages((prev) => [...prev, replyMsg]);
+        }, 1300);
+      }, 700);
     }
   };
 
-  // Full-length (Long) Screenshot Capture Function
-  const handleTakeLongScreenshot = async () => {
-    if (!mainContainerRef.current) return;
-    setIsCapturing(true);
+  // Edit message
+  const handleEditMessage = (
+    id: string,
+    newText: string,
+    newTimestamp: string,
+    isFromMe: boolean,
+    theme: BubbleTheme
+  ) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === id
+          ? { ...msg, text: newText, timestamp: newTimestamp, isFromMe, theme }
+          : msg
+      )
+    );
+  };
 
+  // Delete message
+  const handleDeleteMessage = (id: string) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  };
+
+  // Clear all messages
+  const handleClearAll = () => {
+    setMessages([]);
+    setShowClearChat(false);
+    showToast('Conversation cleared!');
+  };
+
+  // Reset all to defaults
+  const handleResetDefaults = () => {
+    setProfile(initialProfile);
+    setMessages(initialMessages);
+    localStorage.removeItem('insta_chat_profile');
+    localStorage.removeItem('insta_chat_messages');
+    showToast('Reset all data to default template!');
+  };
+
+  // Screenshot capture using html2canvas
+  const handleCaptureScreenshot = async () => {
+    if (!captureAreaRef.current) return;
     try {
-      const container = mainContainerRef.current;
-
-      // Create an off-screen clone of the entire DM container
-      const clone = container.cloneNode(true) as HTMLElement;
-      clone.style.position = 'fixed';
-      clone.style.top = '-99999px';
-      clone.style.left = '0';
-      clone.style.width = `${container.clientWidth || 430}px`;
-      clone.style.height = 'auto';
-      clone.style.maxHeight = 'none';
-      clone.style.overflow = 'visible';
-      clone.style.zIndex = '-1000';
-
-      // Expand chat body to full natural height so all messages appear without scroll clipping
-      const chatBodyInClone = clone.querySelector('.dm-chat-body') as HTMLElement;
-      if (chatBodyInClone) {
-        chatBodyInClone.style.height = 'auto';
-        chatBodyInClone.style.maxHeight = 'none';
-        chatBodyInClone.style.overflow = 'visible';
-      }
-
-      // Remove any active delete badges from the screenshot
-      clone.querySelectorAll('.msg-del-tap').forEach((el) => el.remove());
-
-      document.body.appendChild(clone);
-
-      // Render the complete full-length element to canvas at high resolution
-      const canvas = await html2canvas(clone, {
-        scale: 2.5, // 2.5x scale gives crisp 1080p+ mobile resolution
-        useCORS: true,
-        allowTaint: true,
+      showToast('Capturing full chat...');
+      const canvas = await html2canvas(captureAreaRef.current, {
         backgroundColor: '#000000',
+        scale: 2,
+        useCORS: true,
         logging: false
       });
-
-      document.body.removeChild(clone);
-
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
-      setScreenshotUrl(dataUrl);
-    } catch (err: any) {
-      alert('স্ক্রিনশট তৈরিতে সমস্যা হয়েছে: ' + err.message);
-    } finally {
-      setIsCapturing(false);
+      const dataUrl = canvas.toDataURL('image/png');
+      setCapturedScreenshotUrl(dataUrl);
+    } catch (err) {
+      showToast('Unable to capture screenshot');
     }
-  };
-
-  // Download Trigger
-  const handleDownloadScreenshot = () => {
-    if (!screenshotUrl) return;
-    const link = document.createElement('a');
-    link.download = `instagram_full_dm_${Date.now()}.png`;
-    link.href = screenshotUrl;
-    link.click();
   };
 
   return (
-    <div className="instagram-dm-screen" ref={mainContainerRef}>
-      {/* 1. Real Instagram DM Header */}
-      <header className="dm-header">
-        <div className="dm-header-left">
-          <div className="back-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-          </div>
-          <div className="dm-header-user" onClick={() => setShowSettings(true)}>
-            <div className="header-avatar-circle">
-              <img src={config.profilePicUrl} alt={config.displayName} />
-            </div>
-            <div className="dm-header-info">
-              <span className="header-display-name">{config.displayName}</span>
-              <span className="header-username">{config.username}</span>
-            </div>
-          </div>
-        </div>
+    <div
+      style={{
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#0a0a0a',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Desktop view bar */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 10,
+          right: 14,
+          zIndex: 60,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10
+        }}
+      >
+        <button
+          onClick={() => setIsFrameMode(!isFrameMode)}
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: '#FFFFFF',
+            borderRadius: 20,
+            padding: '4px 12px',
+            fontSize: 12,
+            cursor: 'pointer',
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          {isFrameMode ? '📱 Mobile Frame (Fit)' : '🖥️ Fullscreen View'}
+        </button>
+      </div>
 
-        <div className="dm-header-right">
-          {/* Long Screenshot Export Icon (📸) */}
+      {/* Main App Container */}
+      <div
+        ref={captureAreaRef}
+        style={{
+          width: isFrameMode ? '100%' : '100%',
+          maxWidth: isFrameMode ? 430 : '100%',
+          height: isFrameMode ? '100%' : '100%',
+          maxHeight: isFrameMode ? 890 : '100%',
+          backgroundColor: '#000000',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: isFrameMode ? 32 : 0,
+          boxShadow: isFrameMode ? '0 12px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px #222' : 'none',
+          boxSizing: 'border-box'
+        }}
+      >
+        {currentScreen === 'BACKEND' ? (
+          <BackendScreen
+            currentProfile={profile}
+            messagesList={messages}
+            onSaveProfile={(updated) => setProfile(updated)}
+            onAddMessage={(text, isMe, time, theme) =>
+              handleSendMessage(text, isMe, 'TEXT', undefined, undefined, theme, time)
+            }
+            onEditMessage={handleEditMessage}
+            onDeleteMessage={handleDeleteMessage}
+            onClearAllMessages={handleClearAll}
+            onResetDefaults={handleResetDefaults}
+            onBackToDM={() => setCurrentScreen('DM')}
+            onToast={showToast}
+          />
+        ) : (
+          /* ================= LIVE DM SCREEN ================= */
           <div
-            className="header-action-icon screenshot-trigger-icon"
-            onClick={handleTakeLongScreenshot}
-            title="পুরো কথোপকথনের স্ক্রিনশট নিন"
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: '#000000'
+            }}
           >
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-          </div>
+            {/* Instagram DM Top Bar */}
+            <ChatTopBar
+              name={profile.name}
+              handle={profile.handle}
+              avatarName={profile.avatarName}
+              onBackClick={() => showToast('Direct inbox')}
+              onProfileClick={() => setShowProfileSheet(true)}
+              onChangeAvatar={() => setShowChangeAvatar(true)}
+              onVideoCallClick={() => setShowVideoCall(true)}
+              onTagCaptureScreenshot={handleCaptureScreenshot}
+              onOpenBackend={() => setCurrentScreen('BACKEND')}
+              onClearChatClick={() => setShowClearChat(true)}
+            />
 
-          {/* Video Call Icon */}
-          <div className="header-action-icon">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 7l-7 5 7 5V7z"></path>
-              <rect x="1" y="5" width="15" height="14" rx="3" ry="3"></rect>
-            </svg>
-          </div>
-
-          {/* Tag / Info Icon (Tapping opens backend settings) */}
-          <div className="header-action-icon" onClick={() => setShowSettings(true)}>
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-              <circle cx="7.5" cy="7.5" r="1.5" fill="#ffffff"></circle>
-            </svg>
-          </div>
-        </div>
-      </header>
-
-      {/* 2. Scrollable Chat Body */}
-      <main className="dm-chat-body" ref={chatBodyRef}>
-        {/* Profile Card */}
-        <section className="dm-profile-card">
-          <div className="profile-avatar-circle" onClick={() => setShowSettings(true)}>
-            <img src={config.profilePicUrl} alt={config.displayName} />
-          </div>
-          <h2 className="profile-name">{config.displayName}</h2>
-          <div className="profile-meta">{config.username} · {config.joinedDate}</div>
-          <div className="profile-stats-line">{config.followers} · {config.posts}</div>
-          {config.followsYou && <div className="profile-follows-line">Follows you</div>}
-          <div className="profile-mutual-line">{config.mutualFollowText}</div>
-
-          <div className="profile-action-buttons">
-            <div className="profile-action-item">
-              <div className="profile-action-circle">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  <path d="M9 12l2 2 4-4"></path>
-                </svg>
-              </div>
-              <span className="profile-action-label">Safety tips</span>
-            </div>
-            <div className="profile-action-item">
-              <div className="profile-action-circle">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                </svg>
-              </div>
-              <span className="profile-action-label">Block</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Timestamp */}
-        <div className="dm-timestamp">{config.defaultTimestamp}</div>
-
-        {/* Message Bubbles */}
-        <div className="dm-messages-container">
-          {messages.map((msg) => (
+            {/* Scrollable Chat Area */}
             <div
-              key={msg.id}
-              className={`message-bubble-row ${msg.sender === 'me' ? 'sent' : 'received'}`}
-              onClick={() => setActiveDeleteId(activeDeleteId === msg.id ? null : msg.id)}
+              ref={chatScrollContainerRef}
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                paddingBottom: 10
+              }}
             >
+              {/* Instagram Header with Profile Info */}
+              <ChatHeader
+                profile={profile}
+                onSafetyTipsClick={() => setShowSafetyTips(true)}
+                onBlockClick={() => {
+                  if (profile.isBlocked) {
+                    setProfile((p) => ({ ...p, isBlocked: false }));
+                    showToast(`Unblocked ${profile.handle}`);
+                  } else {
+                    setShowBlockDialog(true);
+                  }
+                }}
+                onProfileClick={() => setShowProfileSheet(true)}
+                onChangeAvatar={() => setShowChangeAvatar(true)}
+              />
+
+              {/* Centered Conversation Timestamp */}
               <div
-                className={`message-bubble ${getFontClass()}`}
-                style={msg.sender === 'me' ? { background: config.bubbleColor } : {}}
+                style={{
+                  width: '100%',
+                  textAlign: 'center',
+                  padding: '12px 0',
+                  color: '#8E8E93',
+                  fontSize: 12,
+                  userSelect: 'none'
+                }}
               >
-                {renderWithIOSEmojis(msg.text)}
+                {profile.chatTimestamp}
               </div>
-              {activeDeleteId === msg.id && (
-                <button
-                  className="msg-del-tap"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteMessage(msg.id);
+
+              {/* Messages list */}
+              {messages.map((msg) => (
+                <ChatMessageItem
+                  key={msg.id}
+                  message={msg}
+                  senderName={profile.name}
+                  avatarName={profile.avatarName}
+                  onAvatarClick={() => setShowProfileSheet(true)}
+                  onMessageClick={(m) => setSelectedMessageForAction(m)}
+                />
+              ))}
+
+              {/* Live typing indicator */}
+              {isTyping && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px 14px',
+                    gap: 8
                   }}
                 >
-                  ✕
-                </button>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      backgroundColor: '#262626'
+                    }}
+                  >
+                    <img
+                      src={profile.avatarName.startsWith('/') ? profile.avatarName : `/avatars/${profile.avatarName}.jpg`}
+                      alt="Sahil"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/avatars/sahil_avatar.jpg';
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      backgroundColor: '#262626',
+                      borderRadius: '16px 16px 16px 4px',
+                      padding: '8px 14px',
+                      display: 'flex',
+                      gap: 4,
+                      alignItems: 'center'
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        backgroundColor: '#8E8E93',
+                        animation: 'bounceDot 1.4s infinite ease-in-out both'
+                      }}
+                    />
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        backgroundColor: '#8E8E93',
+                        animation: 'bounceDot 1.4s infinite ease-in-out both 0.2s'
+                      }}
+                    />
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        backgroundColor: '#8E8E93',
+                        animation: 'bounceDot 1.4s infinite ease-in-out both 0.4s'
+                      }}
+                    />
+                  </div>
+                </div>
               )}
-            </div>
-          ))}
-        </div>
-      </main>
 
-      {/* 3. Real Bottom Message Bar */}
-      <footer className="dm-footer">
-        {/* Blue Camera Button */}
-        <div
-          className="footer-camera-btn"
-          onClick={() => setSendAsMe(!sendAsMe)}
-          title={sendAsMe ? "পাঠাচ্ছেন: আপনি (ডানপাশে)" : "পাঠাচ্ছেন: অন্যজন (বামপাশে)"}
-        >
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="#ffffff">
-            <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/>
-            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
-          </svg>
-        </div>
-
-        {/* Message Input Capsule */}
-        <form className="footer-input-capsule" onSubmit={handleSendMessage}>
-          <input
-            type="text"
-            className={`footer-input-field ${getFontClass()}`}
-            placeholder="Message..."
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-          />
-
-          <div className="footer-input-actions">
-            {inputText.trim() ? (
-              <button type="submit" className="send-btn-active">
-                Send
-              </button>
-            ) : (
-              <>
-                {/* Voice Memo / Mic */}
-                <div className="footer-action-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                  </svg>
-                </div>
-                {/* Photo / Gallery */}
-                <div className="footer-action-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                  </svg>
-                </div>
-                {/* Sticker / Smile */}
-                <div className="footer-action-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                  </svg>
-                </div>
-                {/* Plus Circle */}
-                <div className="footer-action-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                  </svg>
-                </div>
-              </>
-            )}
-          </div>
-        </form>
-      </footer>
-
-      {/* Loading Indicator while generating long screenshot */}
-      {isCapturing && (
-        <div className="capture-loading-overlay">
-          <div className="capture-spinner"></div>
-          <p>সম্পূর্ণ লম্বা স্ক্রিনশট তৈরি হচ্ছে...</p>
-        </div>
-      )}
-
-      {/* 4. Long Screenshot Download Popup Modal */}
-      {screenshotUrl && (
-        <div className="screenshot-modal-overlay" onClick={() => setScreenshotUrl(null)}>
-          <div className="screenshot-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="screenshot-modal-header">
-              <div className="screenshot-modal-title">
-                <h3>পুরো চ্যাটের স্ক্রিনশট</h3>
-                <span className="screenshot-badge">Full Conversation PNG</span>
-              </div>
-              <button className="settings-close-btn" onClick={() => setScreenshotUrl(null)}>✕</button>
+              <div ref={messagesEndRef} />
             </div>
 
-            <div className="screenshot-preview-scroll">
-              <img src={screenshotUrl} alt="Full conversation screenshot" className="screenshot-img-preview" />
-            </div>
-
-            <div className="screenshot-modal-actions">
-              <button className="download-png-btn" onClick={handleDownloadScreenshot}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                ডাউনলোড করুন (HD PNG)
-              </button>
-              <button className="cancel-preview-btn" onClick={() => setScreenshotUrl(null)}>
-                বন্ধ করুন
-              </button>
-            </div>
-            <p className="screenshot-mobile-hint">
-              📱 মোবাইলে ছবির ওপর চাপ দিয়ে ধরে রেখেও (Long press) ছবি সেভ করতে পারেন।
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Backend Settings Drawer (Clean & Hidden) */}
-      {showSettings && (
-        <div className="settings-modal-overlay" onClick={() => setShowSettings(false)}>
-          <div className="settings-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="settings-modal-header">
-              <h3>প্রোফাইল ও ফন্ট সেটিংস</h3>
-              <button className="settings-close-btn" onClick={() => setShowSettings(false)}>✕</button>
-            </div>
-
-            <div className="settings-field">
-              <label>নাম (Display Name):</label>
-              <input
-                type="text"
-                value={config.displayName}
-                onChange={(e) => setConfig({ ...config, displayName: e.target.value })}
-              />
-            </div>
-
-            <div className="settings-field">
-              <label>ইউজারনেম (Username):</label>
-              <input
-                type="text"
-                value={config.username}
-                onChange={(e) => setConfig({ ...config, username: e.target.value })}
-              />
-            </div>
-
-            <div className="settings-field">
-              <label>ফলোয়ার ও পোস্ট:</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  value={config.followers}
-                  onChange={(e) => setConfig({ ...config, followers: e.target.value })}
-                />
-                <input
-                  type="text"
-                  value={config.posts}
-                  onChange={(e) => setConfig({ ...config, posts: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="settings-field">
-              <label>মিউচুয়াল লাইন (Mutual Text):</label>
-              <input
-                type="text"
-                value={config.mutualFollowText}
-                onChange={(e) => setConfig({ ...config, mutualFollowText: e.target.value })}
-              />
-            </div>
-
-            <div className="settings-field">
-              <label>বাংলা লিরিক্স ফন্ট:</label>
-              <select
-                value={config.activeFont}
-                onChange={(e) => setConfig({ ...config, activeFont: e.target.value as any })}
-              >
-                <option value="bonolota">🌸 FL Bonolota Special Unicode</option>
-                <option value="chirkut">✒️ FL Chirkut Aksharangana</option>
-                <option value="mahfuj">📜 FL Mahfuj Isahak Unicode</option>
-                <option value="system">📱 System / Default</option>
-              </select>
-            </div>
-
-            <div className="settings-field">
-              <label>বাবল কালার:</label>
-              <input
-                type="color"
-                value={config.bubbleColor}
-                onChange={(e) => setConfig({ ...config, bubbleColor: e.target.value })}
-                style={{ height: '38px', padding: '2px', cursor: 'pointer' }}
-              />
-            </div>
-
-            <div className="settings-field">
-              <label>টাইমস্ট্যাম্প:</label>
-              <input
-                type="text"
-                value={config.defaultTimestamp}
-                onChange={(e) => setConfig({ ...config, defaultTimestamp: e.target.value })}
-              />
-            </div>
-
-            <button
-              className="settings-save-btn"
-              onClick={() => {
-                setShowSettings(false);
-                handleTakeLongScreenshot();
+            {/* Bottom Input Bar */}
+            <ChatInputBar
+              messageText={inputText}
+              onMessageChange={setInputText}
+              onSendClick={() => {
+                if (inputText.trim()) {
+                  handleSendMessage(inputText.trim(), true);
+                  setInputText('');
+                }
               }}
-              style={{ background: '#10b981', marginBottom: '8px' }}
-            >
-              📸 পুরো কথোপকথনের স্ক্রিনশট নিন
-            </button>
-
-            <button
-              className="settings-save-btn"
-              onClick={() => setShowSettings(false)}
-            >
-              সংরক্ষণ করুন ও বন্ধ করুন
-            </button>
+              onCameraClick={() => {
+                handleSendMessage('Free Fire Booyah victory screenshot', true, 'IMAGE', '/avatars/gaming_post.jpg');
+              }}
+              onMicClick={() => {
+                handleSendMessage('', true, 'AUDIO', undefined, '0:04');
+              }}
+              onGalleryClick={(file) => {
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    if (e.target?.result) {
+                      handleSendMessage('Shared photo', true, 'IMAGE', e.target.result as string);
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                } else {
+                  handleSendMessage('Free Fire Booyah victory screenshot', true, 'IMAGE', '/avatars/gaming_post.jpg');
+                }
+              }}
+              onPlusClick={() => {
+                handleSendMessage('', true, 'AUDIO', undefined, '0:04');
+              }}
+              isBlocked={profile.isBlocked}
+              onUnblockClick={() => {
+                setProfile((p) => ({ ...p, isBlocked: false }));
+                showToast(`Unblocked ${profile.handle}`);
+              }}
+            />
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Modal: Safety Tips */}
+        {showSafetyTips && (
+          <SafetyTipsModal onDismiss={() => setShowSafetyTips(false)} />
+        )}
+
+        {/* Modal: Block User Dialog */}
+        {showBlockDialog && (
+          <BlockUserModal
+            handle={profile.handle}
+            onConfirmBlock={() => {
+              setProfile((p) => ({ ...p, isBlocked: true }));
+              setShowBlockDialog(false);
+              showToast(`Blocked ${profile.handle}`);
+            }}
+            onDismiss={() => setShowBlockDialog(false)}
+          />
+        )}
+
+        {/* Modal: User Profile Sheet */}
+        {showProfileSheet && (
+          <UserProfileModal
+            profile={profile}
+            onDismiss={() => setShowProfileSheet(false)}
+            onSendMessage={() => setShowProfileSheet(false)}
+            onBlockUser={() => {
+              setShowProfileSheet(false);
+              setShowBlockDialog(true);
+            }}
+          />
+        )}
+
+        {/* Modal: Change Avatar */}
+        {showChangeAvatar && (
+          <ChangeAvatarModal
+            currentAvatarName={profile.avatarName}
+            onAvatarSelected={(newAvatar) => {
+              setProfile((p) => ({ ...p, avatarName: newAvatar }));
+              showToast('Profile picture updated!');
+            }}
+            onDismiss={() => setShowChangeAvatar(false)}
+          />
+        )}
+
+        {/* Modal: Message Action (Long-press / click on bubble) */}
+        {selectedMessageForAction && (
+          <MessageActionModal
+            message={selectedMessageForAction}
+            onEditMessage={(id, text, time, isMe, theme) => {
+              handleEditMessage(id, text, time, isMe, theme);
+              setSelectedMessageForAction(null);
+              showToast('Message updated!');
+            }}
+            onDeleteMessage={(id) => {
+              handleDeleteMessage(id);
+              setSelectedMessageForAction(null);
+              showToast('Message removed!');
+            }}
+            onReactEmoji={(emoji) => {
+              handleSendMessage(emoji, true, 'STICKER');
+              setSelectedMessageForAction(null);
+            }}
+            onDismiss={() => setSelectedMessageForAction(null)}
+          />
+        )}
+
+        {/* Modal: Screenshot Download / Share */}
+        {capturedScreenshotUrl && (
+          <ScreenshotModal
+            imageDataUrl={capturedScreenshotUrl}
+            onDismiss={() => setCapturedScreenshotUrl(null)}
+            onToast={showToast}
+          />
+        )}
+
+        {/* Modal: Clear Entire Chat */}
+        {showClearChat && (
+          <ClearChatModal
+            handle={profile.handle}
+            onConfirmClear={handleClearAll}
+            onDismiss={() => setShowClearChat(false)}
+          />
+        )}
+
+        {/* Fullscreen Video Call Simulation */}
+        {showVideoCall && (
+          <VideoCallOverlay
+            name={profile.name}
+            avatarName={profile.avatarName}
+            onEndCall={() => setShowVideoCall(false)}
+          />
+        )}
+
+        {/* Floating Toast Notification */}
+        {toastMessage && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 74,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: 'rgba(38, 38, 38, 0.95)',
+              color: '#FFFFFF',
+              padding: '10px 18px',
+              borderRadius: 24,
+              fontSize: 13,
+              fontWeight: 500,
+              boxShadow: '0 4px 18px rgba(0, 0, 0, 0.5)',
+              zIndex: 99,
+              pointerEvents: 'none',
+              animation: 'fadeInOut 2.4s ease-in-out'
+            }}
+          >
+            {toastMessage}
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes bounceDot {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+          40% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translate(-50%, 10px); }
+          15% { opacity: 1; transform: translate(-50%, 0); }
+          85% { opacity: 1; transform: translate(-50%, 0); }
+          100% { opacity: 0; transform: translate(-50%, -10px); }
+        }
+      `}</style>
     </div>
   );
-}
+};
