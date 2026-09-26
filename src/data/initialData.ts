@@ -2,7 +2,7 @@ import { ChatProfile, ChatMessage, AvatarOption } from '../types/chat';
 
 export const initialProfile: ChatProfile = {
   id: 1,
-  name: '⎯꯭𝆬🦋⃝⃪꯭⃔𝐒꯭ᴀᷱᷝʜ꯭꧊֟፝ʟ𝆹꯭𝅥𔘓꯭_him/he',
+  name: 'Sahil',
   handle: 'not__ur__sahil_77',
   joinedDate: 'Joined Oct 2025',
   followersCount: '108',
@@ -13,7 +13,7 @@ export const initialProfile: ChatProfile = {
   bio: '🎮 Free Fire MAX Esports Player 🔥\n⚡ Headshot machine | 1v1 Room Challenge\n🏆 Guild Leader #Booyah',
   chatTimestamp: '12:41 PM',
   isBlocked: false,
-  autoReplyEnabled: true,
+  autoReplyEnabled: false,
   avatarName: 'sahil_avatar'
 };
 

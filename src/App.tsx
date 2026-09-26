@@ -30,9 +30,10 @@ export const App: React.FC = () => {
         if (!parsed.handle || parsed.handle === 'md.sahil_sk_') {
           parsed.handle = 'not__ur__sahil_77';
         }
-        if (!parsed.name || parsed.name === 'Sahil Sk') {
-          parsed.name = initialProfile.name;
+        if (!parsed.name || parsed.name === 'Sahil Sk' || parsed.name.includes('🦋')) {
+          parsed.name = 'Sahil';
         }
+        parsed.autoReplyEnabled = false;
         return parsed;
       }
       return initialProfile;
@@ -135,30 +136,6 @@ export const App: React.FC = () => {
     };
 
     setMessages((prev) => [...prev, newMsg]);
-
-    // Intelligent auto-reply simulation
-    if (isFromMe && profile.autoReplyEnabled) {
-      setTimeout(() => {
-        setIsTyping(true);
-        setTimeout(() => {
-          setIsTyping(false);
-          const replyText = sahilResponses[responseIndex % sahilResponses.length];
-          setResponseIndex((i) => i + 1);
-
-          const replyMsg: ChatMessage = {
-            id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-            text: replyText,
-            isFromMe: false,
-            timestamp: getCurrentTime(),
-            type: 'TEXT',
-            theme: 'CLASSIC',
-            orderIndex: Date.now()
-          };
-
-          setMessages((prev) => [...prev, replyMsg]);
-        }, 1300);
-      }, 700);
-    }
   };
 
   // Edit message
