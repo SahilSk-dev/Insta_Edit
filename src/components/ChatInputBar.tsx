@@ -10,6 +10,7 @@ interface ChatInputBarProps {
   onGalleryClick: (file?: File) => void;
   onPlusClick: () => void;
   isBlocked: boolean;
+  blockedHandle?: string;
   onUnblockClick: () => void;
 }
 
@@ -22,6 +23,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   onGalleryClick,
   onPlusClick,
   isBlocked,
+  blockedHandle = 'not__ur__sahil_77',
   onUnblockClick
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,11 +47,12 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
       style={{
         width: '100%',
         backgroundColor: '#000000',
-        padding: '8px 12px',
-        position: 'sticky',
-        bottom: 0,
+        padding: '6px 10px',
+        paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))',
+        flexShrink: 0,
         zIndex: 30,
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        borderTop: '0.5px solid #141414'
       }}
     >
       <input
@@ -64,18 +67,18 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
         <div
           style={{
             width: '100%',
-            height: 48,
-            borderRadius: 24,
+            height: 44,
+            borderRadius: 22,
             backgroundColor: '#262626',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '0 18px',
+            padding: '0 16px',
             boxSizing: 'border-box'
           }}
         >
-          <span style={{ color: '#8E8E93', fontSize: 14 }}>
-            You blocked md.sahil_sk_.
+          <span style={{ color: '#8E8E93', fontSize: 13.5 }}>
+            You blocked {blockedHandle}.
           </span>
           <button
             onClick={onUnblockClick}
@@ -96,10 +99,11 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
           {/* Blue Camera Button */}
           <button
             onClick={onCameraClick}
+            type="button"
             title="Send photo"
             style={{
-              width: 42,
-              height: 42,
+              width: 38,
+              height: 38,
               borderRadius: '50%',
               backgroundColor: '#0095F6',
               border: 'none',
@@ -107,29 +111,39 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'opacity 0.2s'
+              flexShrink: 0
             }}
           >
-            <CameraIcon size={22} color="#FFFFFF" />
+            <CameraIcon size={20} color="#FFFFFF" />
           </button>
 
           {/* Pill Container */}
           <div
             style={{
               flex: 1,
-              height: 44,
-              borderRadius: 24,
+              height: 42,
+              borderRadius: 21,
               backgroundColor: '#262626',
               display: 'flex',
               alignItems: 'center',
-              paddingLeft: 16,
+              paddingLeft: 14,
               paddingRight: 6
             }}
           >
-            {/* Input field */}
+            {/* Input field - type="search" + autocomplete="off" disables password/card autofill toolbar in Chrome */}
             <input
-              type="text"
+              type="search"
+              inputMode="text"
+              name="chat_message_entry"
+              id="chat_message_entry"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck={false}
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
               value={messageText}
               onChange={(e) => onMessageChange(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -140,8 +154,9 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                 border: 'none',
                 outline: 'none',
                 color: '#FFFFFF',
-                fontSize: 15,
-                fontFamily: 'inherit'
+                fontSize: 14.5,
+                fontFamily: 'inherit',
+                WebkitAppearance: 'none'
               }}
             />
 
@@ -149,8 +164,8 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span
                   style={{
-                    fontSize: 18,
-                    padding: '0 6px',
+                    fontSize: 17,
+                    padding: '0 4px',
                     userSelect: 'none',
                     cursor: 'default'
                   }}
@@ -158,12 +173,13 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                   😀
                 </span>
                 <button
+                  type="button"
                   onClick={onSendClick}
                   style={{
                     background: 'none',
                     border: 'none',
                     color: '#0095F6',
-                    fontSize: 15,
+                    fontSize: 14.5,
                     fontWeight: 700,
                     cursor: 'pointer',
                     padding: '6px 8px'
@@ -176,58 +192,59 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 {/* Voice Note Button */}
                 <button
+                  type="button"
                   onClick={onMicClick}
                   title="Voice message"
                   style={{
                     background: 'none',
                     border: 'none',
                     color: '#FFFFFF',
-                    width: 34,
-                    height: 34,
+                    width: 32,
+                    height: 32,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer'
                   }}
                 >
-                  <MicIcon size={21} />
+                  <MicIcon size={20} />
                 </button>
 
                 {/* Gallery Button */}
                 <button
-                  onClick={() => {
-                    fileInputRef.current?.click();
-                  }}
-                  title="Upload image from device"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Upload image"
                   style={{
                     background: 'none',
                     border: 'none',
                     color: '#FFFFFF',
-                    width: 34,
-                    height: 34,
+                    width: 32,
+                    height: 32,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer'
                   }}
                 >
-                  <GalleryIcon size={21} />
+                  <GalleryIcon size={20} />
                 </button>
 
                 {/* Emoji Sticker Button */}
                 <button
+                  type="button"
                   onClick={() => onMessageChange('❤️')}
                   title="Quick emoji"
                   style={{
                     background: 'none',
                     border: 'none',
-                    width: 34,
-                    height: 34,
+                    width: 32,
+                    height: 32,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    fontSize: 18
+                    fontSize: 17
                   }}
                 >
                   😀
@@ -235,21 +252,22 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
 
                 {/* Plus / More Actions Button */}
                 <button
+                  type="button"
                   onClick={onPlusClick}
                   title="Quick actions"
                   style={{
                     background: 'none',
                     border: 'none',
                     color: '#FFFFFF',
-                    width: 34,
-                    height: 34,
+                    width: 32,
+                    height: 32,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer'
                   }}
                 >
-                  <PlusIcon size={21} />
+                  <PlusIcon size={20} />
                 </button>
               </div>
             )}

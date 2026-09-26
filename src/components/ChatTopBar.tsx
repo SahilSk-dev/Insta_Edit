@@ -40,15 +40,18 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
         width: '100%',
         backgroundColor: '#000000',
         borderBottom: '0.5px solid #1A1A1A',
-        position: 'sticky',
-        top: 0,
+        position: 'relative',
+        flexShrink: 0,
         zIndex: 40,
-        height: 56,
+        height: 52,
+        paddingTop: 'env(safe-area-inset-top, 0px)',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 8px',
+        paddingLeft: 8,
+        paddingRight: 8,
         justifyContent: 'space-between',
-        userSelect: 'none'
+        userSelect: 'none',
+        boxSizing: 'content-box'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>

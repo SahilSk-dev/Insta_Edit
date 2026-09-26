@@ -141,11 +141,13 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
     <div
       style={{
         width: '100%',
-        minHeight: '100%',
+        height: '100%',
         backgroundColor: '#000000',
         display: 'flex',
         flexDirection: 'column',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch'
       }}
     >
       <input
@@ -164,7 +166,9 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
           borderBottom: '1px solid #1A1A1A',
           position: 'sticky',
           top: 0,
-          zIndex: 40
+          zIndex: 40,
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          flexShrink: 0
         }}
       >
         <div

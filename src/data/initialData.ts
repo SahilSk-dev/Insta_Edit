@@ -3,7 +3,7 @@ import { ChatProfile, ChatMessage, AvatarOption } from '../types/chat';
 export const initialProfile: ChatProfile = {
   id: 1,
   name: 'Sahil Sk',
-  handle: 'md.sahil_sk_',
+  handle: 'not__ur__sahil_77',
   joinedDate: 'Joined Oct 2025',
   followersCount: '108',
   postsCount: '1',
@@ -18,20 +18,10 @@ export const initialProfile: ChatProfile = {
 };
 
 export const availableAvatars: AvatarOption[] = [
-  { id: 'sahil_avatar', name: 'Default Avatar', url: '/avatars/sahil_avatar.jpg' },
-  { id: 'avatar_cyber_samurai', name: 'Cyber Ninja', url: '/avatars/avatar_cyber_samurai.jpg' },
-  { id: 'avatar_gold_tiger', name: 'Golden Flame Tiger', url: '/avatars/avatar_gold_tiger.jpg' }
+  { id: 'sahil_avatar', name: 'Sahil Sk', url: '/avatars/sahil_avatar.jpg' }
 ];
 
-export const getAvatarUrl = (avatarName: string): string => {
-  if (avatarName.startsWith('data:') || avatarName.startsWith('blob:') || avatarName.startsWith('http')) {
-    return avatarName;
-  }
-  const match = availableAvatars.find(a => a.id === avatarName);
-  if (match) return match.url;
-  if (avatarName.endsWith('.jpg') || avatarName.endsWith('.png') || avatarName.endsWith('.webp')) {
-    return avatarName.startsWith('/') ? avatarName : `/avatars/${avatarName}`;
-  }
+export const getAvatarUrl = (_avatarName?: string): string => {
   return '/avatars/sahil_avatar.jpg';
 };
 

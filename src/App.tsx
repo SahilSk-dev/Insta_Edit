@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { ChatProfile, ChatMessage, BubbleTheme } from './types/chat';
-import { initialProfile, initialMessages, sahilResponses } from './data/initialData';
+import { initialProfile, initialMessages, sahilResponses, getAvatarUrl } from './data/initialData';
 import { ChatTopBar } from './components/ChatTopBar';
 import { ChatHeader } from './components/ChatHeader';
 import { ChatMessageItem } from './components/ChatMessageItem';
@@ -21,7 +21,15 @@ export const App: React.FC = () => {
   const [profile, setProfile] = useState<ChatProfile>(() => {
     try {
       const saved = localStorage.getItem('insta_chat_profile');
-      return saved ? JSON.parse(saved) : initialProfile;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        parsed.avatarName = 'sahil_avatar';
+        if (!parsed.handle || parsed.handle === 'md.sahil_sk_') {
+          parsed.handle = 'not__ur__sahil_77';
+        }
+        return parsed;
+      }
+      return initialProfile;
     } catch {
       return initialProfile;
     }
@@ -62,9 +70,6 @@ export const App: React.FC = () => {
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [selectedMessageForAction, setSelectedMessageForAction] = useState<ChatMessage | null>(null);
   const [capturedScreenshotUrl, setCapturedScreenshotUrl] = useState<string | null>(null);
-
-  // Desktop presentation toggle
-  const [isFrameMode, setIsFrameMode] = useState(true);
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -206,116 +211,80 @@ export const App: React.FC = () => {
 
   return (
     <div
+      ref={captureAreaRef}
       style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         width: '100vw',
-        height: '100vh',
-        backgroundColor: '#0a0a0a',
+        height: '100dvh',
+        backgroundColor: '#000000',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        boxSizing: 'border-box'
       }}
     >
-      {/* Desktop view bar */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 10,
-          right: 14,
-          zIndex: 60,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10
-        }}
-      >
-        <button
-          onClick={() => setIsFrameMode(!isFrameMode)}
+      {currentScreen === 'BACKEND' ? (
+        <BackendScreen
+          currentProfile={profile}
+          messagesList={messages}
+          onSaveProfile={(updated) => setProfile(updated)}
+          onAddMessage={(text, isMe, time, theme) =>
+            handleSendMessage(text, isMe, 'TEXT', undefined, undefined, theme, time)
+          }
+          onEditMessage={handleEditMessage}
+          onDeleteMessage={handleDeleteMessage}
+          onClearAllMessages={handleClearAll}
+          onResetDefaults={handleResetDefaults}
+          onBackToDM={() => setCurrentScreen('DM')}
+          onToast={showToast}
+        />
+      ) : (
+        /* ================= LIVE DM SCREEN ================= */
+        <div
           style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            color: '#FFFFFF',
-            borderRadius: 20,
-            padding: '4px 12px',
-            fontSize: 12,
-            cursor: 'pointer',
-            backdropFilter: 'blur(10px)'
+            width: '100%',
+            height: '100%',
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: '#000000',
+            overflow: 'hidden'
           }}
         >
-          {isFrameMode ? '📱 Mobile Frame (Fit)' : '🖥️ Fullscreen View'}
-        </button>
-      </div>
-
-      {/* Main App Container */}
-      <div
-        ref={captureAreaRef}
-        style={{
-          width: isFrameMode ? '100%' : '100%',
-          maxWidth: isFrameMode ? 430 : '100%',
-          height: isFrameMode ? '100%' : '100%',
-          maxHeight: isFrameMode ? 890 : '100%',
-          backgroundColor: '#000000',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: isFrameMode ? 32 : 0,
-          boxShadow: isFrameMode ? '0 12px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px #222' : 'none',
-          boxSizing: 'border-box'
-        }}
-      >
-        {currentScreen === 'BACKEND' ? (
-          <BackendScreen
-            currentProfile={profile}
-            messagesList={messages}
-            onSaveProfile={(updated) => setProfile(updated)}
-            onAddMessage={(text, isMe, time, theme) =>
-              handleSendMessage(text, isMe, 'TEXT', undefined, undefined, theme, time)
-            }
-            onEditMessage={handleEditMessage}
-            onDeleteMessage={handleDeleteMessage}
-            onClearAllMessages={handleClearAll}
-            onResetDefaults={handleResetDefaults}
-            onBackToDM={() => setCurrentScreen('DM')}
-            onToast={showToast}
+          {/* Instagram DM Top Bar */}
+          <ChatTopBar
+            name={profile.name}
+            handle={profile.handle}
+            avatarName={profile.avatarName}
+            onBackClick={() => showToast('Direct inbox')}
+            onProfileClick={() => setShowProfileSheet(true)}
+            onChangeAvatar={() => setShowChangeAvatar(true)}
+            onVideoCallClick={() => setShowVideoCall(true)}
+            onTagCaptureScreenshot={handleCaptureScreenshot}
+            onOpenBackend={() => setCurrentScreen('BACKEND')}
+            onClearChatClick={() => setShowClearChat(true)}
           />
-        ) : (
-          /* ================= LIVE DM SCREEN ================= */
+
+          {/* Scrollable Chat Area */}
           <div
+            ref={chatScrollContainerRef}
             style={{
-              width: '100%',
-              height: '100%',
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'contain',
               display: 'flex',
               flexDirection: 'column',
-              backgroundColor: '#000000'
+              paddingBottom: 8
             }}
           >
-            {/* Instagram DM Top Bar */}
-            <ChatTopBar
-              name={profile.name}
-              handle={profile.handle}
-              avatarName={profile.avatarName}
-              onBackClick={() => showToast('Direct inbox')}
-              onProfileClick={() => setShowProfileSheet(true)}
-              onChangeAvatar={() => setShowChangeAvatar(true)}
-              onVideoCallClick={() => setShowVideoCall(true)}
-              onTagCaptureScreenshot={handleCaptureScreenshot}
-              onOpenBackend={() => setCurrentScreen('BACKEND')}
-              onClearChatClick={() => setShowClearChat(true)}
-            />
-
-            {/* Scrollable Chat Area */}
-            <div
-              ref={chatScrollContainerRef}
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                paddingBottom: 10
-              }}
-            >
               {/* Instagram Header with Profile Info */}
               <ChatHeader
                 profile={profile}
@@ -378,7 +347,7 @@ export const App: React.FC = () => {
                     }}
                   >
                     <img
-                      src={profile.avatarName.startsWith('/') ? profile.avatarName : `/avatars/${profile.avatarName}.jpg`}
+                      src={getAvatarUrl(profile.avatarName)}
                       alt="Sahil"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={(e) => {
@@ -463,6 +432,7 @@ export const App: React.FC = () => {
                 handleSendMessage('', true, 'AUDIO', undefined, '0:04');
               }}
               isBlocked={profile.isBlocked}
+              blockedHandle={profile.handle}
               onUnblockClick={() => {
                 setProfile((p) => ({ ...p, isBlocked: false }));
                 showToast(`Unblocked ${profile.handle}`);
@@ -586,20 +556,19 @@ export const App: React.FC = () => {
             {toastMessage}
           </div>
         )}
-      </div>
 
-      <style>{`
-        @keyframes bounceDot {
-          0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-          40% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes fadeInOut {
-          0% { opacity: 0; transform: translate(-50%, 10px); }
-          15% { opacity: 1; transform: translate(-50%, 0); }
-          85% { opacity: 1; transform: translate(-50%, 0); }
-          100% { opacity: 0; transform: translate(-50%, -10px); }
-        }
-      `}</style>
-    </div>
-  );
-};
+        <style>{`
+          @keyframes bounceDot {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, 10px); }
+            15% { opacity: 1; transform: translate(-50%, 0); }
+            85% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -10px); }
+          }
+        `}</style>
+      </div>
+    );
+  };

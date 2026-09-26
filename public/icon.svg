@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFDC80" />
+      <stop offset="25%" stop-color="#F77737" />
+      <stop offset="50%" stop-color="#FD1D1D" />
+      <stop offset="75%" stop-color="#E1306C" />
+      <stop offset="100%" stop-color="#C13584" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#igGrad)" />
+  <!-- Direct message paper airplane / bubble icon -->
+  <path d="M410.5 101.5L96.5 241.5C82.5 247.5 83 268 97.5 273L197 308.5L343.5 174L230 320.5L356.5 397C369.5 405 386.5 398 390 383.5L435.5 125C439 109 423.5 96 410.5 101.5Z" fill="#FFFFFF" />
+</svg>
