@@ -69,71 +69,42 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         {profile.name}
       </h2>
 
-      {/* Username and Joined Date */}
-      <div style={{ color: '#A8A8A8', fontSize: 14, marginBottom: 4 }}>
-        {profile.handle} · {profile.joinedDate}
+      {/* Username and Instagram branding */}
+      <div style={{ color: '#A8A8A8', fontSize: 14, marginBottom: 4, fontWeight: 400 }}>
+        {profile.handle} · Instagram
       </div>
 
       {/* Followers & Posts */}
-      <div style={{ color: '#A8A8A8', fontSize: 14, marginBottom: 4 }}>
+      <div style={{ color: '#A8A8A8', fontSize: 13.5, marginBottom: 4 }}>
         {profile.followersCount} followers · {profile.postsCount} post
       </div>
 
-      {/* Follows you */}
-      <div style={{ color: '#A8A8A8', fontSize: 14, marginBottom: 4 }}>
-        {profile.followsYouText}
-      </div>
-
       {/* Mutual follow */}
-      <div style={{ color: '#A8A8A8', fontSize: 14, marginBottom: 20 }}>
+      <div style={{ color: '#A8A8A8', fontSize: 13.5, marginBottom: 16 }}>
         {profile.mutualFollowText}
       </div>
 
-      {/* Action Buttons: Safety tips & Block */}
-      <div
+      {/* Native Instagram Android: View profile button */}
+      <button
+        onClick={onProfileClick}
         style={{
-          display: 'flex',
+          backgroundColor: '#262626',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: 8,
+          padding: '6px 16px',
+          color: '#FFFFFF',
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 36
+          userSelect: 'none',
+          marginBottom: 8
         }}
       >
-        {/* Safety tips */}
-        <div
-          onClick={onSafetyTipsClick}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            cursor: 'pointer',
-            padding: '6px 12px',
-            borderRadius: 8
-          }}
-        >
-          <ShieldHeartIcon size={30} color="#FFFFFF" />
-          <span style={{ color: '#FFFFFF', fontSize: 13, marginTop: 6 }}>
-            Safety tips
-          </span>
-        </div>
-
-        {/* Block / Unblock */}
-        <div
-          onClick={onBlockClick}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            cursor: 'pointer',
-            padding: '6px 12px',
-            borderRadius: 8
-          }}
-        >
-          <BlockSlashIcon size={30} color="#FFFFFF" />
-          <span style={{ color: '#FFFFFF', fontSize: 13, marginTop: 6 }}>
-            {profile.isBlocked ? 'Unblock' : 'Block'}
-          </span>
-        </div>
-      </div>
+        View profile
+      </button>
     </div>
   );
 };

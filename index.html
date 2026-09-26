@@ -13,41 +13,134 @@
     <link rel="apple-touch-icon" href="/icon.svg" />
     <title>Instagram Direct</title>
     <style>
+      /* Bengali Custom Fonts */
       @font-face {
         font-family: 'FL Bonolota';
         src: url('/fonts/FL Bonolota Special Unicode.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
+        font-display: swap;
       }
       @font-face {
         font-family: 'FL Bonolota';
         src: url('/fonts/FL Bonolota Special Unicode Italic.ttf') format('truetype');
         font-weight: normal;
         font-style: italic;
+        font-display: swap;
       }
       @font-face {
         font-family: 'FL Chirkut';
         src: url('/fonts/FL Chirkut Aksharangana Regular.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
+        font-display: swap;
       }
       @font-face {
         font-family: 'FL Chirkut';
         src: url('/fonts/FL Chirkut Aksharangana Italic.ttf') format('truetype');
         font-weight: normal;
         font-style: italic;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'FL Chirkut Special';
+        src: url('/fonts/FL Chirkut Special Modifie.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
       }
       @font-face {
         font-family: 'FL Mahfuj Isahak';
         src: url('/fonts/FL Mahfuj Isahak Unicode.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
+        font-display: swap;
       }
       @font-face {
         font-family: 'FL Mahfuj Isahak';
         src: url('/fonts/FL Mahfuj Isahak Unicode Italic.ttf') format('truetype');
         font-weight: normal;
         font-style: italic;
+        font-display: swap;
+      }
+
+      /* Unicode Extended & Stylized Script Fonts */
+      @font-face {
+        font-family: 'Noto Sans';
+        src: url('/fonts/NotoSans.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans Math';
+        src: url('/fonts/NotoSansMath.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans Meetei Mayek';
+        src: url('/fonts/NotoSansMeeteiMayek.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Music';
+        src: url('/fonts/NotoMusic.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans Anatolian Hieroglyphs';
+        src: url('/fonts/NotoSansAnatolianHieroglyphs.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans Javanese';
+        src: url('/fonts/NotoSansJavanese.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans Hebrew';
+        src: url('/fonts/NotoSansHebrew.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans Ethiopic';
+        src: url('/fonts/NotoSansEthiopic.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans Symbols';
+        src: url('/fonts/NotoSansSymbols.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans Symbols 2';
+        src: url('/fonts/NotoSansSymbols2.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Color Emoji Custom';
+        src: url('/fonts/NotoColorEmoji.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
       }
 
       * {
@@ -69,10 +162,19 @@
         bottom: 0;
         background-color: #000000;
         color: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+          "Noto Sans", "Noto Sans Math", "Noto Sans Meetei Mayek", "Noto Music",
+          "Noto Sans Anatolian Hieroglyphs", "Noto Sans Javanese", "Noto Sans Hebrew", "Noto Sans Ethiopic",
+          "Noto Sans Symbols", "Noto Sans Symbols 2",
+          "FL Bonolota", "FL Chirkut", "FL Chirkut Special", "FL Mahfuj Isahak",
+          "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji Custom", "Noto Color Emoji", "Segoe UI Symbol", sans-serif;
         overscroll-behavior: none;
         user-select: none;
         -webkit-user-select: none;
+      }
+
+      input, textarea, button, select {
+        font-family: inherit;
       }
 
       #root {

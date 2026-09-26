@@ -1,10 +1,14 @@
 import React, { useRef } from 'react';
 import { CameraIcon, MicIcon, GalleryIcon, InstagramStickerIcon } from './InstagramIcons';
+import { getAvatarUrl } from '../data/initialData';
 
 interface ChatInputBarProps {
   messageText: string;
   onMessageChange: (text: string) => void;
   onSendClick: () => void;
+  activeSender: 'ME' | 'SAHIL';
+  onToggleSender: () => void;
+  sahilAvatar: string;
   onCameraClick: () => void;
   onMicClick: () => void;
   onGalleryClick: (file?: File) => void;
@@ -18,6 +22,9 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   messageText,
   onMessageChange,
   onSendClick,
+  activeSender,
+  onToggleSender,
+  sahilAvatar,
   onCameraClick,
   onMicClick,
   onGalleryClick,
@@ -157,29 +164,79 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                 border: 'none',
                 outline: 'none',
                 color: '#FFFFFF',
-                fontSize: 14.5,
+                fontSize: 16,
                 fontFamily: 'inherit',
                 WebkitAppearance: 'none'
               }}
             />
 
             {messageText.trim().length > 0 ? (
-              <button
-                type="button"
-                onClick={onSendClick}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#0095F6',
-                  fontSize: 14.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  padding: '6px 10px',
-                  flexShrink: 0
-                }}
-              >
-                Send
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                {/* 1-Tap Sender Switcher Badge */}
+                <button
+                  type="button"
+                  onClick={onToggleSender}
+                  title={activeSender === 'ME' ? 'Sending as You (Right). Tap to switch to Sahil' : 'Sending as Sahil (Left). Tap to switch to You'}
+                  style={{
+                    background: activeSender === 'ME' ? 'rgba(56, 112, 248, 0.25)' : 'rgba(255, 255, 255, 0.12)',
+                    border: activeSender === 'ME' ? '1px solid #3870F8' : '1px solid #8E8E93',
+                    borderRadius: 14,
+                    padding: '2px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    cursor: 'pointer',
+                    color: '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {activeSender === 'ME' ? (
+                    <>
+                      <span style={{ fontSize: 13 }}>👤</span>
+                      <span>You</span>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          flexShrink: 0
+                        }}
+                      >
+                        <img
+                          src={getAvatarUrl(sahilAvatar)}
+                          alt="Sahil"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                      <span>Sahil</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Native Android Send button */}
+                <button
+                  type="button"
+                  onClick={onSendClick}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0095F6',
+                    fontSize: 15,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    padding: '6px 6px',
+                    flexShrink: 0
+                  }}
+                >
+                  Send
+                </button>
+              </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
                 {/* Voice Note Button */}

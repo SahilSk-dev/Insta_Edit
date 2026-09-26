@@ -2,7 +2,7 @@ import { ChatProfile, ChatMessage, AvatarOption } from '../types/chat';
 
 export const initialProfile: ChatProfile = {
   id: 1,
-  name: 'Sahil Sk',
+  name: '⎯꯭𝆬🦋⃝⃪꯭⃔𝐒꯭ᴀᷱᷝʜ꯭꧊֟፝ʟ𝆹꯭𝅥𔘓꯭_him/he',
   handle: 'not__ur__sahil_77',
   joinedDate: 'Joined Oct 2025',
   followersCount: '108',

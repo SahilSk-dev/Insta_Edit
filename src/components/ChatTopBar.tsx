@@ -2,8 +2,9 @@ import React from 'react';
 import {
   BackIcon,
   VideoCallIcon,
-  InstagramSmileyBubbleIcon,
-  InstagramTagIcon
+  PhoneCallIcon,
+  InfoIcon,
+  ChevronRightIcon
 } from './InstagramIcons';
 import { getAvatarUrl } from '../data/initialData';
 
@@ -121,10 +122,14 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                lineHeight: '18px'
+                lineHeight: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4
               }}
             >
-              {name}
+              <span>{name}</span>
+              <ChevronRightIcon size={14} color="#A8A8A8" />
             </div>
             <div
               style={{
@@ -142,30 +147,26 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
         </div>
       </div>
 
-      {/* Action buttons on the right */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {/* Smiley speech bubble: Tap -> Backend Editor, ContextMenu -> Clear Chat */}
+      {/* Action buttons on the right - Exact Android Native Instagram DM Icons */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* Phone / Audio call button */}
         <button
-          onClick={onOpenBackend}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            onClearChatClick();
-          }}
-          title="DM Backend Editor (Right-click to Clear Chat)"
+          onClick={onVideoCallClick}
+          title="Audio Call"
           style={{
             background: 'none',
             border: 'none',
             color: '#FFFFFF',
             cursor: 'pointer',
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '50%'
           }}
         >
-          <InstagramSmileyBubbleIcon size={23} />
+          <PhoneCallIcon size={23} />
         </button>
 
         {/* Video Call button */}
@@ -177,39 +178,39 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
             border: 'none',
             color: '#FFFFFF',
             cursor: 'pointer',
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '50%'
           }}
         >
-          <VideoCallIcon size={26} />
+          <VideoCallIcon size={25} />
         </button>
 
-        {/* Tag / Label icon: Tap -> Screenshot dialog, ContextMenu -> Clear Chat */}
+        {/* Info (i) / Details button -> Opens backend editor / details */}
         <button
-          onClick={onTagCaptureScreenshot}
+          onClick={onOpenBackend}
           onContextMenu={(e) => {
             e.preventDefault();
-            onClearChatClick();
+            onTagCaptureScreenshot();
           }}
-          title="Screenshot DM (Right-click to Clear Chat)"
+          title="Chat details & Editor (Right-click or Long-press for Screenshot)"
           style={{
             background: 'none',
             border: 'none',
             color: '#FFFFFF',
             cursor: 'pointer',
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '50%'
           }}
         >
-          <InstagramTagIcon size={23} />
+          <InfoIcon size={24} />
         </button>
       </div>
     </header>

@@ -30,6 +30,9 @@ export const App: React.FC = () => {
         if (!parsed.handle || parsed.handle === 'md.sahil_sk_') {
           parsed.handle = 'not__ur__sahil_77';
         }
+        if (!parsed.name || parsed.name === 'Sahil Sk') {
+          parsed.name = initialProfile.name;
+        }
         return parsed;
       }
       return initialProfile;
@@ -62,6 +65,7 @@ export const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<'DM' | 'BACKEND'>('DM');
   const [isTyping, setIsTyping] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [activeSender, setActiveSender] = useState<'ME' | 'SAHIL'>('ME');
   const [responseIndex, setResponseIndex] = useState(0);
 
   // UI Modals
@@ -409,32 +413,36 @@ export const App: React.FC = () => {
             <ChatInputBar
               messageText={inputText}
               onMessageChange={setInputText}
+              activeSender={activeSender}
+              onToggleSender={() => setActiveSender((prev) => (prev === 'ME' ? 'SAHIL' : 'ME'))}
+              sahilAvatar={profile.avatarName}
               onSendClick={() => {
                 if (inputText.trim()) {
-                  setPendingMessageText(inputText.trim());
+                  handleSendMessage(inputText.trim(), activeSender === 'ME');
+                  setInputText('');
                 }
               }}
               onCameraClick={() => {
-                handleSendMessage('Free Fire Booyah victory screenshot', true, 'IMAGE', '/avatars/gaming_post.jpg');
+                handleSendMessage('Free Fire Booyah victory screenshot', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
               }}
               onMicClick={() => {
-                handleSendMessage('', true, 'AUDIO', undefined, '0:04');
+                handleSendMessage('', activeSender === 'ME', 'AUDIO', undefined, '0:04');
               }}
               onGalleryClick={(file) => {
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = (e) => {
                     if (e.target?.result) {
-                      handleSendMessage('Shared photo', true, 'IMAGE', e.target.result as string);
+                      handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', e.target.result as string);
                     }
                   };
                   reader.readAsDataURL(file);
                 } else {
-                  handleSendMessage('Free Fire Booyah victory screenshot', true, 'IMAGE', '/avatars/gaming_post.jpg');
+                  handleSendMessage('Free Fire Booyah victory screenshot', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
                 }
               }}
               onPlusClick={() => {
-                handleSendMessage('', true, 'AUDIO', undefined, '0:04');
+                handleSendMessage('', activeSender === 'ME', 'AUDIO', undefined, '0:04');
               }}
               isBlocked={profile.isBlocked}
               blockedHandle={profile.handle}
