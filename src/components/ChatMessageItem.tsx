@@ -28,8 +28,9 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         display: 'flex',
         justifyContent: isMe ? 'flex-end' : 'flex-start',
         alignItems: 'flex-end',
-        padding: '3px 14px',
-        width: '100%'
+        padding: '3px 12px',
+        width: '100%',
+        boxSizing: 'border-box'
       }}
     >
       {/* Received avatar */}
@@ -38,8 +39,8 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
           onClick={onAvatarClick}
           title={senderName}
           style={{
-            width: 30,
-            height: 30,
+            width: 28,
+            height: 28,
             borderRadius: '50%',
             overflow: 'hidden',
             backgroundColor: '#262626',
@@ -57,7 +58,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         </div>
       )}
 
-      {/* Message content container */}
+      {/* Message content container: tightened to 75% max width */}
       <div
         onClick={() => onMessageClick(message)}
         onContextMenu={(e) => {
@@ -67,7 +68,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         title="Tap or right-click to edit, react, or apply theme effects"
         style={{
           cursor: 'pointer',
-          maxWidth: '82%',
+          maxWidth: '75%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: isMe ? 'flex-end' : 'flex-start'
@@ -77,8 +78,8 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         {message.type === 'IMAGE' && (
           <div
             style={{
-              maxWidth: 240,
-              borderRadius: 18,
+              maxWidth: 220,
+              borderRadius: 16,
               overflow: 'hidden',
               backgroundColor: '#262626',
               boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)'
@@ -89,7 +90,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
               alt="Photo"
               style={{
                 width: '100%',
-                maxHeight: 240,
+                maxHeight: 220,
                 objectFit: 'cover',
                 display: 'block'
               }}
@@ -101,7 +102,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         {message.type === 'STICKER' && (
           <div
             style={{
-              fontSize: 44,
+              fontSize: 38,
               padding: '2px 4px',
               lineHeight: 1.1,
               userSelect: 'none'
@@ -115,22 +116,23 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         {message.type === 'AUDIO' && (
           <div
             style={{
-              minWidth: 180,
-              maxWidth: 240,
-              borderRadius: 20,
+              width: 'fit-content',
+              minWidth: 150,
+              maxWidth: 210,
+              borderRadius: 18,
               background: isMe
                 ? 'linear-gradient(135deg, #7038F8 0%, #8A3FFC 50%, #9E27E8 100%)'
                 : '#262626',
-              padding: '10px 14px',
+              padding: '8px 12px',
               display: 'flex',
               alignItems: 'center',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
             }}
           >
             <div
               style={{
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 borderRadius: '50%',
                 backgroundColor: 'rgba(255, 255, 255, 0.22)',
                 display: 'flex',
@@ -139,15 +141,15 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                 flexShrink: 0
               }}
             >
-              <PlayIcon size={16} color="#FFFFFF" />
+              <PlayIcon size={14} color="#FFFFFF" />
             </div>
             <div
               style={{
-                marginLeft: 10,
+                marginLeft: 8,
                 color: '#FFFFFF',
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: 500,
-                letterSpacing: '1px'
+                letterSpacing: '0.8px'
               }}
             >
               ılılıllı|lıl {message.audioDuration || '0:04'}
@@ -167,15 +169,16 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             ) : (
               <div
                 style={{
-                  maxWidth: 280,
-                  borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                  width: 'fit-content',
+                  maxWidth: '100%',
+                  borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                   background: isMe
                     ? 'linear-gradient(135deg, #7038F8 0%, #8A3FFC 50%, #9E27E8 100%)'
                     : '#262626',
                   color: '#FFFFFF',
-                  padding: '10px 16px',
-                  fontSize: 15,
-                  lineHeight: '20px',
+                  padding: '8px 14px',
+                  fontSize: '14.5px',
+                  lineHeight: '19px',
                   wordBreak: 'break-word',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
                 }}
