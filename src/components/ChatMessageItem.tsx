@@ -173,13 +173,14 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                   maxWidth: '100%',
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                   background: isMe
-                    ? 'linear-gradient(135deg, #7038F8 0%, #8A3FFC 50%, #9E27E8 100%)'
+                    ? 'linear-gradient(90deg, #3870F8 0%, #7A3FE4 40%, #B832B0 75%, #E024A8 100%)'
                     : '#262626',
                   color: '#FFFFFF',
                   padding: '8px 14px',
                   fontSize: '14.5px',
-                  lineHeight: '19px',
+                  lineHeight: '19.5px',
                   wordBreak: 'break-word',
+                  textAlign: isMe ? 'right' : 'left',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
                 }}
               >
