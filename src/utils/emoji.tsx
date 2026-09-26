@@ -40,7 +40,8 @@ export function renderWithIOSEmojis(text: string): React.ReactNode[] {
           src={appleImgUrl}
           alt={emojiChar}
           className="ios-emoji"
-          loading="lazy"
+          crossOrigin="anonymous"
+          loading="eager"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';

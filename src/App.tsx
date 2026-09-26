@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import html2canvas from 'html2canvas';
 import { initialProfileConfig, initialMessages, ProfileConfig, ChatMessage } from './config/profile.ts';
 import { renderWithIOSEmojis } from './utils/emoji.tsx';
 
@@ -18,6 +19,11 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [activeDeleteId, setActiveDeleteId] = useState<string | null>(null);
 
+  // Long Screenshot Popup State
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+
+  const mainContainerRef = useRef<HTMLDivElement>(null);
   const chatBodyRef = useRef<HTMLDivElement>(null);
 
   // Save to localStorage so edits on mobile persist
@@ -60,13 +66,74 @@ export default function App() {
     }
   };
 
+  // Full-length (Long) Screenshot Capture Function
+  const handleTakeLongScreenshot = async () => {
+    if (!mainContainerRef.current) return;
+    setIsCapturing(true);
+
+    try {
+      const container = mainContainerRef.current;
+
+      // Create an off-screen clone of the entire DM container
+      const clone = container.cloneNode(true) as HTMLElement;
+      clone.style.position = 'fixed';
+      clone.style.top = '-99999px';
+      clone.style.left = '0';
+      clone.style.width = `${container.clientWidth || 430}px`;
+      clone.style.height = 'auto';
+      clone.style.maxHeight = 'none';
+      clone.style.overflow = 'visible';
+      clone.style.zIndex = '-1000';
+
+      // Expand chat body to full natural height so all messages appear without scroll clipping
+      const chatBodyInClone = clone.querySelector('.dm-chat-body') as HTMLElement;
+      if (chatBodyInClone) {
+        chatBodyInClone.style.height = 'auto';
+        chatBodyInClone.style.maxHeight = 'none';
+        chatBodyInClone.style.overflow = 'visible';
+      }
+
+      // Remove any active delete badges from the screenshot
+      clone.querySelectorAll('.msg-del-tap').forEach((el) => el.remove());
+
+      document.body.appendChild(clone);
+
+      // Render the complete full-length element to canvas at high resolution
+      const canvas = await html2canvas(clone, {
+        scale: 2.5, // 2.5x scale gives crisp 1080p+ mobile resolution
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#000000',
+        logging: false
+      });
+
+      document.body.removeChild(clone);
+
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      setScreenshotUrl(dataUrl);
+    } catch (err: any) {
+      alert('স্ক্রিনশট তৈরিতে সমস্যা হয়েছে: ' + err.message);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  // Download Trigger
+  const handleDownloadScreenshot = () => {
+    if (!screenshotUrl) return;
+    const link = document.createElement('a');
+    link.download = `instagram_full_dm_${Date.now()}.png`;
+    link.href = screenshotUrl;
+    link.click();
+  };
+
   return (
-    <div className="instagram-dm-screen">
+    <div className="instagram-dm-screen" ref={mainContainerRef}>
       {/* 1. Real Instagram DM Header */}
       <header className="dm-header">
         <div className="dm-header-left">
           <div className="back-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
@@ -83,27 +150,30 @@ export default function App() {
         </div>
 
         <div className="dm-header-right">
-          {/* Sticker / Face Icon */}
-          <div className="header-action-icon">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-              <line x1="9" y1="9" x2="9.01" y2="9"></line>
-              <line x1="15" y1="9" x2="15.01" y2="9"></line>
-              <line x1="18" y1="4" x2="18" y2="8"></line>
-              <line x1="16" y1="6" x2="20" y2="6"></line>
+          {/* Long Screenshot Export Icon (📸) */}
+          <div
+            className="header-action-icon screenshot-trigger-icon"
+            onClick={handleTakeLongScreenshot}
+            title="পুরো কথোপকথনের স্ক্রিনশট নিন"
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
           </div>
+
           {/* Video Call Icon */}
           <div className="header-action-icon">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 7l-7 5 7 5V7z"></path>
               <rect x="1" y="5" width="15" height="14" rx="3" ry="3"></rect>
             </svg>
           </div>
+
           {/* Tag / Info Icon (Tapping opens backend settings) */}
           <div className="header-action-icon" onClick={() => setShowSettings(true)}>
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
               <circle cx="7.5" cy="7.5" r="1.5" fill="#ffffff"></circle>
             </svg>
@@ -127,7 +197,7 @@ export default function App() {
           <div className="profile-action-buttons">
             <div className="profile-action-item">
               <div className="profile-action-circle">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" strokeWidth="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                   <path d="M9 12l2 2 4-4"></path>
                 </svg>
@@ -136,7 +206,7 @@ export default function App() {
             </div>
             <div className="profile-action-item">
               <div className="profile-action-circle">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
                 </svg>
@@ -212,7 +282,7 @@ export default function App() {
               <>
                 {/* Voice Memo / Mic */}
                 <div className="footer-action-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                     <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -221,7 +291,7 @@ export default function App() {
                 </div>
                 {/* Photo / Gallery */}
                 <div className="footer-action-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect>
                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
                     <polyline points="21 15 16 10 5 21"></polyline>
@@ -229,7 +299,7 @@ export default function App() {
                 </div>
                 {/* Sticker / Smile */}
                 <div className="footer-action-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
                     <line x1="9" y1="9" x2="9.01" y2="9"></line>
@@ -238,7 +308,7 @@ export default function App() {
                 </div>
                 {/* Plus Circle */}
                 <div className="footer-action-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a8a8a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="16"></line>
                     <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -250,7 +320,51 @@ export default function App() {
         </form>
       </footer>
 
-      {/* 4. Backend Settings Drawer (Clean & Hidden) */}
+      {/* Loading Indicator while generating long screenshot */}
+      {isCapturing && (
+        <div className="capture-loading-overlay">
+          <div className="capture-spinner"></div>
+          <p>সম্পূর্ণ লম্বা স্ক্রিনশট তৈরি হচ্ছে...</p>
+        </div>
+      )}
+
+      {/* 4. Long Screenshot Download Popup Modal */}
+      {screenshotUrl && (
+        <div className="screenshot-modal-overlay" onClick={() => setScreenshotUrl(null)}>
+          <div className="screenshot-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="screenshot-modal-header">
+              <div className="screenshot-modal-title">
+                <h3>পুরো চ্যাটের স্ক্রিনশট</h3>
+                <span className="screenshot-badge">Full Conversation PNG</span>
+              </div>
+              <button className="settings-close-btn" onClick={() => setScreenshotUrl(null)}>✕</button>
+            </div>
+
+            <div className="screenshot-preview-scroll">
+              <img src={screenshotUrl} alt="Full conversation screenshot" className="screenshot-img-preview" />
+            </div>
+
+            <div className="screenshot-modal-actions">
+              <button className="download-png-btn" onClick={handleDownloadScreenshot}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                ডাউনলোড করুন (HD PNG)
+              </button>
+              <button className="cancel-preview-btn" onClick={() => setScreenshotUrl(null)}>
+                বন্ধ করুন
+              </button>
+            </div>
+            <p className="screenshot-mobile-hint">
+              📱 মোবাইলে ছবির ওপর চাপ দিয়ে ধরে রেখেও (Long press) ছবি সেভ করতে পারেন।
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Backend Settings Drawer (Clean & Hidden) */}
       {showSettings && (
         <div className="settings-modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="settings-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -333,6 +447,17 @@ export default function App() {
                 onChange={(e) => setConfig({ ...config, defaultTimestamp: e.target.value })}
               />
             </div>
+
+            <button
+              className="settings-save-btn"
+              onClick={() => {
+                setShowSettings(false);
+                handleTakeLongScreenshot();
+              }}
+              style={{ background: '#10b981', marginBottom: '8px' }}
+            >
+              📸 পুরো কথোপকথনের স্ক্রিনশট নিন
+            </button>
 
             <button
               className="settings-save-btn"
