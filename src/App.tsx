@@ -392,6 +392,7 @@ export const App: React.FC = () => {
               onMessageChange={setInputText}
               activeSender={activeSender}
               onToggleSender={() => setActiveSender((prev) => (prev === 'ME' ? 'SAHIL' : 'ME'))}
+              contactName={profile.name}
               sahilAvatar={profile.avatarName}
               onSendClick={() => {
                 if (inputText.trim()) {
@@ -478,6 +479,7 @@ export const App: React.FC = () => {
         {selectedMessageForAction && (
           <MessageActionModal
             message={selectedMessageForAction}
+            contactName={profile.name}
             onEditMessage={(id, text, time, isMe, theme) => {
               handleEditMessage(id, text, time, isMe, theme);
               setSelectedMessageForAction(null);

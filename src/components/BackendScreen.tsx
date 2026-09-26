@@ -636,7 +636,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
                       onChange={() => setNewMsgIsMe(false)}
                       style={{ accentColor: '#0095F6' }}
                     />
-                    Sahil Sk (Dark)
+                    {name || 'Contact'} (Dark)
                   </label>
                 </div>
               </div>
@@ -925,7 +925,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
                     onChange={() => setEditingMsgIsMe(false)}
                     style={{ accentColor: '#0095F6' }}
                   />
-                  Sahil Sk
+                  {name || 'Contact'}
                 </label>
               </div>
             </div>

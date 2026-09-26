@@ -4,6 +4,7 @@ import { EditIcon, DeleteIcon, SwapIcon } from './InstagramIcons';
 
 interface MessageActionModalProps {
   message: ChatMessage;
+  contactName?: string;
   onEditMessage: (id: string, newText: string, newTimestamp: string, isFromMe: boolean, theme: BubbleTheme) => void;
   onDeleteMessage: (id: string) => void;
   onReactEmoji: (emoji: string) => void;
@@ -12,6 +13,7 @@ interface MessageActionModalProps {
 
 export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   message,
+  contactName = 'Sahil',
   onEditMessage,
   onDeleteMessage,
   onReactEmoji,
@@ -207,7 +209,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               >
                 <SwapIcon size={20} color="#FFFFFF" />
                 <span style={{ color: '#FFFFFF', fontSize: 15, fontWeight: 500, marginLeft: 14 }}>
-                  {message.isFromMe ? 'Change Sender to Sahil Sk' : 'Change Sender to You'}
+                  {message.isFromMe ? `Change Sender to ${contactName}` : 'Change Sender to You'}
                 </span>
               </div>
 
@@ -305,7 +307,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     onChange={() => setEditIsMe(false)}
                     style={{ accentColor: '#0095F6' }}
                   />
-                  Sahil Sk
+                  {contactName}
                 </label>
               </div>
             </div>

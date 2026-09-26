@@ -8,6 +8,7 @@ interface ChatInputBarProps {
   onSendClick: () => void;
   activeSender: 'ME' | 'SAHIL';
   onToggleSender: () => void;
+  contactName?: string;
   sahilAvatar: string;
   onCameraClick: () => void;
   onMicClick: () => void;
@@ -24,6 +25,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   onSendClick,
   activeSender,
   onToggleSender,
+  contactName = 'Sahil',
   sahilAvatar,
   onCameraClick,
   onMicClick,
@@ -176,7 +178,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                 <button
                   type="button"
                   onClick={onToggleSender}
-                  title={activeSender === 'ME' ? 'Sending as You (Right). Tap to switch to Sahil' : 'Sending as Sahil (Left). Tap to switch to You'}
+                  title={activeSender === 'ME' ? `Sending as You (Right). Tap to switch to ${contactName}` : `Sending as ${contactName} (Left). Tap to switch to You`}
                   style={{
                     background: activeSender === 'ME' ? 'rgba(56, 112, 248, 0.25)' : 'rgba(255, 255, 255, 0.12)',
                     border: activeSender === 'ME' ? '1px solid #3870F8' : '1px solid #8E8E93',
@@ -210,11 +212,11 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
                       >
                         <img
                           src={getAvatarUrl(sahilAvatar)}
-                          alt="Sahil"
+                          alt={contactName}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       </div>
-                      <span>Sahil</span>
+                      <span>{contactName}</span>
                     </>
                   )}
                 </button>
