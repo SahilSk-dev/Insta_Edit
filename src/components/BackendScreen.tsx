@@ -668,7 +668,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
               </div>
             </div>
 
-            {/* Chat Bubble Spacing (গ্যাপ সেটিংস) */}
+            {/* Chat Bubble Spacing */}
             <div
               style={{
                 backgroundColor: '#161616',
@@ -680,7 +680,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <label style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>↕ Chat Bubble Spacing (চ্যাট গ্যাপ)</span>
+                  <span>↕ Chat Bubble Spacing</span>
                 </label>
                 <span
                   style={{

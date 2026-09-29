@@ -480,7 +480,7 @@ export const App: React.FC = () => {
               {/* Centered Conversation Timestamp (100% Authentic Instagram DM - tap to adjust spacing) */}
               <div
                 onClick={() => setShowSpacingModal(true)}
-                title="Tap to adjust Chat Bubble Spacing (গ্যাপ পরিবর্তন)"
+                title="Tap to adjust Chat Bubble Spacing"
                 style={{
                   width: '100%',
                   textAlign: 'center',
@@ -832,7 +832,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* Modal: Select Sender (Ami vs Sahil) */}
+        {/* Modal: Select Sender (You vs Contact) */}
         {pendingMessageText && (
           <SenderSelectModal
             messageText={pendingMessageText}

@@ -930,7 +930,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <span style={{ color: '#FFFFFF', fontSize: 13.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>↕ Chat Bubble Gap (গ্যাপ সেটিংস)</span>
+                  <span>↕ Chat Bubble Gap</span>
                 </span>
                 {onOpenSpacingModal && (
                   <button
@@ -959,7 +959,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.07)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <span style={{ color: '#D4D4D4', fontSize: 12.5, fontWeight: 600 }}>
-                    🌐 All Bubbles Gap (সব মেসেজের গ্যাপ):
+                    🌐 All Bubbles Gap (Global):
                   </span>
                   <span
                     style={{
@@ -1040,7 +1040,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <span style={{ color: '#D4D4D4', fontSize: 12, fontWeight: 600 }}>
-                    🎯 This Bubble Only (এই মেসেজের নিচের গ্যাপ):
+                    🎯 This Bubble Only (Custom Gap):
                   </span>
                   <button
                     type="button"
@@ -1578,7 +1578,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <label style={{ color: '#D4D4D4', fontSize: 12, fontWeight: 600 }}>
-                    🌐 All Bubbles Gap (সব মেসেজের গ্যাপ):
+                    🌐 All Bubbles Gap (Global):
                   </label>
                   <span style={{ color: '#0095F6', fontSize: 12, fontWeight: 700 }}>
                     {globalSpacing ?? 4}px

@@ -307,7 +307,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 18 }}>↕</span>
               <div>
-                <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600 }}>Bubble Spacing (গ্যাপ)</div>
+                <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600 }}>Bubble Spacing</div>
                 <div style={{ color: '#8E8E93', fontSize: 11.5 }}>
                   {globalBubbleSpacing}px vertical gap
                 </div>

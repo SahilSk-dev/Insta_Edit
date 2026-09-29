@@ -211,7 +211,7 @@ export const calculateBubbleLayout = (text: string, userFontFamily?: string): Bu
     isUltraShort = true;
     iconScale = 0.72;
   } else if (charCount <= 5) {
-    // Ultra-short words (e.g. "hii", "HII", "ok", "বাচ্চা", "তুমি?")
+    // Ultra-short words (e.g. "hii", "HII", "ok", "hey", "you?")
     isUltraShort = true;
     isShort = true;
     fontSize = hasBengali ? '18px' : '20px'; // 20px makes English 'hii' prominent, crisp, bold!

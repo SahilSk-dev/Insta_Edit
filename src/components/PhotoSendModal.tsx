@@ -321,7 +321,7 @@ export const PhotoSendModal: React.FC<PhotoSendModalProps> = ({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: '#00E676', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>🛡️</span> Protected Buffer (ফাঁকা স্পেস):
+                <span>🛡️</span> Protected Buffer (Reserved Headroom):
               </span>
               <span
                 style={{
@@ -347,14 +347,14 @@ export const PhotoSendModal: React.FC<PhotoSendModalProps> = ({
                 paddingTop: 6
               }}
             >
-              ✅ স্টোরেজ ও চ্যাট মেসেজ সেভ নিরাপদ রাখতে ফটো সাইজের বাইরে ৪০KB জায়গা সর্বদা ফাঁকা রাখা হচ্ছে।
+              ✅ 40KB of safe storage headroom is permanently reserved to prevent memory overflow and guarantee message saving.
             </div>
           </div>
 
           {/* Quality & Preset Selector with MAX Button */}
           <div>
             <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
-              Quality & Compression (কোয়ালিটি সিলেক্ট করুন):
+              Quality & Compression:
             </label>
 
             <div style={{ display: 'flex', gap: 8 }}>
@@ -439,7 +439,7 @@ export const PhotoSendModal: React.FC<PhotoSendModalProps> = ({
           {/* Sender Switcher */}
           <div>
             <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
-              Sender (কে ছবি পাঠাবে):
+              Sender:
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
@@ -492,7 +492,7 @@ export const PhotoSendModal: React.FC<PhotoSendModalProps> = ({
           {/* Optional Caption */}
           <div>
             <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-              Caption / Note (ঐচ্ছিক):
+              Caption / Note (Optional):
             </label>
             <input
               type="text"

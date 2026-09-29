@@ -56,7 +56,7 @@ export const initialMessages: ChatMessage[] = [
   },
   {
     id: 'msg-3',
-    text: 'Kemon acho? 🦋',
+    text: 'How are you? 🦋',
     isFromMe: true,
     timestamp: '12:42 PM',
     type: 'TEXT',
@@ -65,7 +65,7 @@ export const initialMessages: ChatMessage[] = [
   },
   {
     id: 'msg-4',
-    text: 'Valo, tumi? ⚡',
+    text: 'Doing great, you? ⚡',
     isFromMe: false,
     timestamp: '12:43 PM',
     type: 'TEXT',
@@ -84,11 +84,11 @@ export const initialMessages: ChatMessage[] = [
 ];
 
 export const sahilResponses = [
-  'Arey bhai! Kaise ho?',
-  'Free Fire MAX me rank push karoge aaj? 🔥',
+  'Hey bro! How are you doing?',
+  'Pushing rank today? 🔥',
   '1v1 custom room challenge accepted! 🎮👑',
-  'Aaj Booyah confirm hai bro! 💯',
-  'Haan bolo bhai, sab theek? 😎',
-  'Squad full hone wala hai, jaldi aao! 🚀',
-  'Headshot sensitivity settings share karu kya? 🎯⚡'
+  'Victory is confirmed today bro! 💯',
+  'Yeah tell me, everything good? 😎',
+  'Squad is almost full, join quick! 🚀',
+  'Should I share the sensitivity settings? 🎯⚡'
 ];

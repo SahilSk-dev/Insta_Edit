@@ -116,7 +116,7 @@ export const SenderSelectModal: React.FC<SenderSelectModalProps> = ({
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ color: '#FFFFFF', fontSize: 15, fontWeight: 700 }}>
-                Ami (You)
+                You (Me)
               </div>
               <div style={{ color: '#8E8E93', fontSize: 12.5, marginTop: 2 }}>
                 Outgoing message • Blue/magenta bubble on Right 👉
