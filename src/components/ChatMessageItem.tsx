@@ -172,33 +172,6 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                   />
                 </div>
               </div>
-
-              {/* Top-Right Indicator Pill (Dimensions & Laser Style) */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  zIndex: 4,
-                  backgroundColor: 'rgba(0, 0, 0, 0.65)',
-                  backdropFilter: 'blur(4px)',
-                  borderRadius: 10,
-                  padding: '2px 6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 3,
-                  fontSize: 10,
-                  color: isLaser ? '#00F0FF' : '#E0E0E0',
-                  pointerEvents: 'none',
-                  opacity: 0.85,
-                  fontWeight: 600,
-                  letterSpacing: '0.3px',
-                  border: isLaser ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255,255,255,0.15)'
-                }}
-              >
-                <span>{width}×{height || 'auto'}</span>
-                {isLaser && <span>⚡</span>}
-              </div>
             </div>
           );
         })()}
