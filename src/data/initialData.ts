@@ -5,16 +5,17 @@ export const initialProfile: ChatProfile = {
   name: 'Sahil',
   handle: 'not__ur__sahil_77',
   joinedDate: 'Joined Oct 2025',
-  followersCount: '108',
+  followersCount: '3,000',
   postsCount: '1',
-  followingCount: '142',
+  followingCount: '10',
   followsYouText: 'Follows you',
   mutualFollowText: 'You both follow __broken__heart__019',
-  bio: '🎮 Free Fire MAX Esports Player 🔥\n⚡ Headshot machine | 1v1 Room Challenge\n🏆 Guild Leader #Booyah',
+  bio: 'Developed by Sahil',
   chatTimestamp: '12:41 PM',
   isBlocked: false,
   autoReplyEnabled: false,
-  avatarName: 'sahil_avatar'
+  avatarName: 'sahil_avatar',
+  emojiFont: 'SamsungOneUI_4_Xmas'
 };
 
 export const availableAvatars: AvatarOption[] = [
@@ -37,7 +38,7 @@ export const getAvatarUrl = (avatarName?: string): string => {
 export const initialMessages: ChatMessage[] = [
   {
     id: 'msg-1',
-    text: 'Hello Sahil bhai! Kemon acho? Free Fire MAX khelbe aaj?',
+    text: 'Hii',
     isFromMe: true,
     timestamp: '12:41 PM',
     type: 'TEXT',
@@ -46,7 +47,7 @@ export const initialMessages: ChatMessage[] = [
   },
   {
     id: 'msg-2',
-    text: 'Arey bhai! Ekdom bhalo achi. Aajke rank push korbo, squad ready ache! 🔥🎮',
+    text: 'Hello ❤️‍🔥',
     isFromMe: false,
     timestamp: '12:41 PM',
     type: 'TEXT',
@@ -55,41 +56,30 @@ export const initialMessages: ChatMessage[] = [
   },
   {
     id: 'msg-3',
-    text: 'Free Fire Booyah victory screenshot',
-    isFromMe: false,
+    text: 'Kemon acho? 🦋',
+    isFromMe: true,
     timestamp: '12:42 PM',
-    type: 'IMAGE',
-    imageResName: '/avatars/gaming_post.jpg',
-    theme: 'CLASSIC',
+    type: 'TEXT',
+    theme: 'MIDNIGHT_BUTTERFLY',
     orderIndex: 3
   },
   {
     id: 'msg-4',
-    text: '',
+    text: 'Valo, tumi? ⚡',
     isFromMe: false,
-    timestamp: '12:42 PM',
-    type: 'AUDIO',
-    audioDuration: '0:04',
-    theme: 'CLASSIC',
+    timestamp: '12:43 PM',
+    type: 'TEXT',
+    theme: 'NEON_CYBER',
     orderIndex: 4
   },
   {
     id: 'msg-5',
-    text: 'Tumi amar moner majhe ekla projapoti 🦋✨',
+    text: 'Shine ✨',
     isFromMe: true,
-    timestamp: '12:43 PM',
+    timestamp: '12:44 PM',
     type: 'TEXT',
-    theme: 'MIDNIGHT_BUTTERFLY',
+    theme: 'GOLDEN_LUXE',
     orderIndex: 5
-  },
-  {
-    id: 'msg-6',
-    text: '🔥',
-    isFromMe: false,
-    timestamp: '12:43 PM',
-    type: 'STICKER',
-    theme: 'CLASSIC',
-    orderIndex: 6
   }
 ];
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { availableAvatars } from '../data/initialData';
 import { GalleryIcon } from './InstagramIcons';
 import { CropAvatarModal } from './CropAvatarModal';
@@ -15,34 +15,22 @@ export const ChangeAvatarModal: React.FC<ChangeAvatarModalProps> = ({
   onDismiss
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [pendingCropImage, setPendingCropImage] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        if (event.target?.result) {
-          setCropImageSrc(event.target.result as string);
+        const rawResult = event.target?.result as string;
+        if (rawResult) {
+          setPendingCropImage(rawResult);
         }
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = '';
   };
-
-  if (cropImageSrc) {
-    return (
-      <CropAvatarModal
-        imageSrc={cropImageSrc}
-        onApply={(croppedDataUrl) => {
-          onAvatarSelected(croppedDataUrl);
-          setCropImageSrc(null);
-          onDismiss();
-        }}
-        onCancel={() => setCropImageSrc(null)}
-      />
-    );
-  }
 
   return (
     <div
@@ -184,6 +172,18 @@ export const ChangeAvatarModal: React.FC<ChangeAvatarModalProps> = ({
           </div>
         </div>
       </div>
+
+      {pendingCropImage && (
+        <CropAvatarModal
+          imageSrc={pendingCropImage}
+          onApply={(croppedUrl) => {
+            onAvatarSelected(croppedUrl);
+            setPendingCropImage(null);
+            onDismiss();
+          }}
+          onCancel={() => setPendingCropImage(null)}
+        />
+      )}
     </div>
   );
 };

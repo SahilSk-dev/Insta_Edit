@@ -1,23 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChatProfile } from '../types/chat';
 import { GridIcon, CloseIcon } from './InstagramIcons';
 import { getAvatarUrl } from '../data/initialData';
+import { CropAvatarModal } from './CropAvatarModal';
 
 interface UserProfileModalProps {
   profile: ChatProfile;
   onDismiss: () => void;
   onSendMessage: () => void;
   onBlockUser: () => void;
+  onOpenEmojiFontSelect?: () => void;
+  onAvatarUpload?: (newAvatar: string) => void;
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   profile,
   onDismiss,
   onSendMessage,
-  onBlockUser
+  onBlockUser,
+  onOpenEmojiFontSelect,
+  onAvatarUpload
 }) => {
   const [isFollowing, setIsFollowing] = useState(false);
+  const [pendingCropImage, setPendingCropImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarUrl = getAvatarUrl(profile.avatarName);
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const raw = event.target?.result as string;
+        if (raw) {
+          setPendingCropImage(raw);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
 
   return (
     <div
@@ -108,15 +130,28 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             marginBottom: 14
           }}
         >
-          {/* Avatar */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleAvatarFileChange}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+
+          {/* Avatar (Tap to change) */}
           <div
+            onClick={() => fileInputRef.current?.click()}
+            title="Tap to change profile picture"
             style={{
               width: 80,
               height: 80,
               borderRadius: '50%',
               overflow: 'hidden',
               backgroundColor: '#262626',
-              flexShrink: 0
+              flexShrink: 0,
+              cursor: 'pointer',
+              border: '2px solid rgba(255, 255, 255, 0.15)',
+              position: 'relative'
             }}
           >
             <img
@@ -214,6 +249,38 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </button>
         </div>
 
+        {/* Chat Emoji Font Row */}
+        {onOpenEmojiFontSelect && (
+          <div
+            onClick={() => {
+              onDismiss();
+              onOpenEmojiFontSelect();
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: 14,
+              padding: '10px 14px',
+              backgroundColor: '#1E1E1E',
+              borderRadius: 10,
+              cursor: 'pointer',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 18 }}>😊</span>
+              <div>
+                <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600 }}>Chat Emoji Font</div>
+                <div style={{ color: '#8E8E93', fontSize: 11.5 }}>
+                  {profile.emojiFont || 'SamsungOneUI_4_Xmas'}
+                </div>
+              </div>
+            </div>
+            <span style={{ color: '#3897F0', fontSize: 12.5, fontWeight: 600 }}>Change</span>
+          </div>
+        )}
+
         {/* Posts section header */}
         <div
           style={{
@@ -246,6 +313,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </div>
         </div>
       </div>
+
+      {pendingCropImage && (
+        <CropAvatarModal
+          imageSrc={pendingCropImage}
+          onApply={(croppedUrl) => {
+            if (onAvatarUpload) {
+              onAvatarUpload(croppedUrl);
+            }
+            setPendingCropImage(null);
+          }}
+          onCancel={() => setPendingCropImage(null)}
+        />
+      )}
     </div>
   );
 };

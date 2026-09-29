@@ -143,6 +143,69 @@
         font-display: swap;
       }
 
+      /* =========================================================
+         Popular Emoji Fonts (Samsung, Facebook, iOS, etc.)
+         ========================================================= */
+      @font-face {
+        font-family: 'SamsungOneUI_4_Xmas';
+        src: url('/fonts/emoji/SamsungOneUI_4_Xmas.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Samsung_OneUI_4';
+        src: url('/fonts/emoji/Samsung_OneUI_4.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Facebook15.0';
+        src: url('/fonts/emoji/Facebook15.0.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'OneUI6.1';
+        src: url('/fonts/emoji/OneUI6.1.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'iOS18';
+        src: url('/fonts/emoji/unofficial_iOS18_S.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Twemoji';
+        src: url('/fonts/emoji/Twemoji-v15.0.3.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Windows11';
+        src: url('/fonts/emoji/Windows11.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        --active-emoji-font: 'SamsungOneUI_4_Xmas';
+      }
+
       * {
         box-sizing: border-box;
         margin: 0;
@@ -162,12 +225,12 @@
         bottom: 0;
         background-color: #000000;
         color: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Nirmala UI", "Kohinoor Bangla", "Noto Sans Bengali", "Bangla Sangam MN", Helvetica, Arial,
           "Noto Sans", "Noto Sans Math", "Noto Sans Meetei Mayek", "Noto Music",
           "Noto Sans Anatolian Hieroglyphs", "Noto Sans Javanese", "Noto Sans Hebrew", "Noto Sans Ethiopic",
           "Noto Sans Symbols", "Noto Sans Symbols 2",
-          "FL Bonolota", "FL Chirkut", "FL Chirkut Special", "FL Mahfuj Isahak",
-          "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji Custom", "Noto Color Emoji", "Segoe UI Symbol", sans-serif;
+          var(--active-emoji-font, 'SamsungOneUI_4_Xmas'),
+          "Apple Color Emoji", "Noto Color Emoji Custom", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
         overscroll-behavior: none;
         user-select: none;
         -webkit-user-select: none;

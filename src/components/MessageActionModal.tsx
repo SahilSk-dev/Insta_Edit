@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 import { ChatMessage, BubbleTheme } from '../types/chat';
 import { EditIcon, DeleteIcon, SwapIcon } from './InstagramIcons';
+import { AestheticLyricsBubble, calculateBubbleLayout, renderBubbleTextWithEmojiFont } from './AestheticBubble';
+import { EmojiFontPreviewDropdown } from './EmojiFontPreviewDropdown';
 
 interface MessageActionModalProps {
   message: ChatMessage;
   contactName?: string;
-  onEditMessage: (id: string, newText: string, newTimestamp: string, isFromMe: boolean, theme: BubbleTheme) => void;
+  onEditMessage: (
+    id: string,
+    newText: string,
+    newTimestamp: string,
+    isFromMe: boolean,
+    theme: BubbleTheme,
+    emojiFont?: string,
+    reaction?: string
+  ) => void;
   onDeleteMessage: (id: string) => void;
   onReactEmoji: (emoji: string) => void;
   onDismiss: () => void;
@@ -24,6 +34,8 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   const [editTimestamp, setEditTimestamp] = useState(message.timestamp);
   const [editIsMe, setEditIsMe] = useState(message.isFromMe);
   const [selectedTheme, setSelectedTheme] = useState<BubbleTheme>(message.theme || 'CLASSIC');
+  const [selectedEmojiFont, setSelectedEmojiFont] = useState<string>(message.emojiFont || '');
+  const [selectedReaction, setSelectedReaction] = useState<string>(message.reaction || '');
 
   const themes: { key: BubbleTheme; label: string }[] = [
     { key: 'CLASSIC', label: 'Normal' },
@@ -39,12 +51,12 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
         zIndex: 85,
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        backdropFilter: 'blur(2px)'
+        backdropFilter: 'blur(3px)'
       }}
     >
       <div
@@ -52,21 +64,29 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
         style={{
           width: '100%',
           maxWidth: 480,
-          backgroundColor: '#121212',
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          padding: '20px 20px 36px 20px',
+          maxHeight: '92vh',
+          backgroundColor: '#141414',
+          borderTopLeftRadius: 22,
+          borderTopRightRadius: 22,
+          padding: '16px 20px 28px 20px',
           boxSizing: 'border-box',
-          animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+          scrollbarWidth: 'thin'
         }}
       >
+        {/* Drag Handle */}
         <div
           style={{
-            width: 40,
+            width: 38,
             height: 4,
             borderRadius: 2,
             backgroundColor: 'rgba(255, 255, 255, 0.25)',
-            margin: '0 auto 16px auto'
+            margin: '0 auto 14px auto',
+            flexShrink: 0
           }}
         />
 
@@ -81,29 +101,58 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                 backgroundColor: '#262626',
                 borderRadius: 30,
                 padding: '8px 14px',
-                marginBottom: 16
+                marginBottom: message.reaction ? 10 : 16
               }}
             >
-              {['❤️', '😂', '🔥', '😮', '😢', '👍'].map((emoji) => (
+              {['❤️', '😂', '🔥', '😮', '😢', '👍'].map((emoji) => {
+                const isSelected = message.reaction === emoji;
+                return (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      onReactEmoji(emoji);
+                      onDismiss();
+                    }}
+                    title={isSelected ? `Remove reaction (${emoji})` : `React ${emoji}`}
+                    style={{
+                      background: isSelected ? 'rgba(255, 255, 255, 0.18)' : 'none',
+                      border: isSelected ? '1.5px solid #0095F6' : '1.5px solid transparent',
+                      borderRadius: '50%',
+                      fontSize: 26,
+                      cursor: 'pointer',
+                      padding: 4,
+                      lineHeight: 1,
+                      transform: isSelected ? 'scale(1.18)' : 'scale(1)',
+                      transition: 'transform 0.15s ease, background-color 0.15s ease'
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                );
+              })}
+            </div>
+
+            {message.reaction && (
+              <div style={{ textAlign: 'center', marginBottom: 14 }}>
                 <button
-                  key={emoji}
+                  type="button"
                   onClick={() => {
-                    onReactEmoji(emoji);
+                    onReactEmoji(message.reaction!);
                     onDismiss();
                   }}
                   style={{
                     background: 'none',
                     border: 'none',
-                    fontSize: 26,
+                    color: '#ED4956',
+                    fontSize: 12,
                     cursor: 'pointer',
-                    padding: 4,
-                    lineHeight: 1
+                    textDecoration: 'underline'
                   }}
                 >
-                  {emoji}
+                  Remove reaction ({message.reaction})
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
 
             {/* Quick Apply Theme / Overlay */}
             <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
@@ -234,14 +283,138 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
             </div>
           </>
         ) : (
-          /* Inline Editing View */
-          <div>
-            <h3 style={{ color: '#FFFFFF', fontSize: 17, fontWeight: 700, margin: '0 0 14px 0' }}>
-              Edit Message
-            </h3>
+          /* ================= INLINE EDITING VIEW ================= */
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ color: '#FFFFFF', fontSize: 17, fontWeight: 700, margin: 0 }}>
+                Edit Message
+              </h3>
+              <button
+                onClick={() => setIsEditing(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#A8A8A8',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  padding: '4px 8px'
+                }}
+              >
+                Back
+              </button>
+            </div>
 
+            {/* Interactive Live Bubble Preview Container */}
+            <div
+              style={{
+                backgroundColor: '#000000',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: 14,
+                padding: '14px 16px',
+                marginBottom: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#8E8E93', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Live Preview (হুবহু লাইভ প্রিভিউ)
+                </span>
+                <span style={{ color: '#0095F6', fontSize: 11, fontWeight: 500 }}>
+                  {selectedTheme === 'CLASSIC' ? 'Classic' : selectedTheme} · {selectedEmojiFont || 'Chat Font'}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: editIsMe ? 'flex-end' : 'flex-start',
+                  alignItems: 'flex-end',
+                  padding: '4px 0',
+                  width: '100%'
+                }}
+              >
+                <div style={{ position: 'relative', display: 'inline-block', maxWidth: '85%' }}>
+                  {selectedTheme && selectedTheme !== 'CLASSIC' ? (
+                    <AestheticLyricsBubble
+                      text={editText || 'Type a message...'}
+                      theme={selectedTheme}
+                      isFromMe={editIsMe}
+                      emojiFont={selectedEmojiFont}
+                    />
+                  ) : (
+                    (() => {
+                      const classicLayout = calculateBubbleLayout(editText || 'Type a message...');
+                      return (
+                        <div
+                          style={{
+                            display: 'inline-block',
+                            width: 'fit-content',
+                            maxWidth: '100%',
+                            borderRadius: editIsMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                            background: editIsMe
+                              ? 'linear-gradient(90deg, #3870F8 0%, #7A3FE4 40%, #B832B0 75%, #E024A8 100%)'
+                              : '#262626',
+                            color: '#FFFFFF',
+                            padding: classicLayout.padding,
+                            minWidth: classicLayout.minWidth,
+                            fontSize: classicLayout.fontSize,
+                            fontWeight: classicLayout.fontWeight,
+                            lineHeight: classicLayout.lineHeight,
+                            letterSpacing: classicLayout.letterSpacing,
+                            textAlign: classicLayout.textAlign,
+                            wordBreak: 'break-word',
+                            whiteSpace: 'pre-wrap',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                          }}
+                        >
+                          {renderBubbleTextWithEmojiFont(
+                            editText || 'Type a message...',
+                            selectedEmojiFont,
+                            classicLayout.fontWeight,
+                            '#FFFFFF'
+                          )}
+                        </div>
+                      );
+                    })()
+                  )}
+
+                  {/* Reaction Badge in Live Preview */}
+                  {selectedReaction && (
+                    <div
+                      title={`Reaction: ${selectedReaction}`}
+                      style={{
+                        position: 'absolute',
+                        bottom: -9,
+                        [editIsMe ? 'left' : 'right']: (selectedTheme && selectedTheme !== 'CLASSIC') ? 10 : 6,
+                        backgroundColor: '#1E1E1E',
+                        border: '2px solid #000000',
+                        borderRadius: '50%',
+                        width: 24,
+                        height: 24,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 13,
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.65)',
+                        zIndex: 10,
+                        userSelect: 'none',
+                        fontFamily: `'${selectedEmojiFont}', "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`,
+                        animation: 'popInReaction 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                      }}
+                    >
+                      {selectedReaction}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Message Text Input */}
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 4 }}>
+              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 4, fontWeight: 500 }}>
                 Message Text
               </label>
               <textarea
@@ -252,19 +425,21 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                   width: '100%',
                   borderRadius: 8,
                   backgroundColor: '#262626',
-                  border: '1px solid #333',
+                  border: '1px solid #383838',
                   color: '#FFFFFF',
                   padding: 10,
                   fontSize: 14,
                   boxSizing: 'border-box',
                   outline: 'none',
-                  fontFamily: 'inherit'
+                  fontFamily: 'inherit',
+                  resize: 'vertical'
                 }}
               />
             </div>
 
+            {/* Timestamp */}
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 4 }}>
+              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 4, fontWeight: 500 }}>
                 Timestamp (e.g. 12:42 PM)
               </label>
               <input
@@ -276,7 +451,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                   height: 38,
                   borderRadius: 8,
                   backgroundColor: '#262626',
-                  border: '1px solid #333',
+                  border: '1px solid #383838',
                   color: '#FFFFFF',
                   padding: '0 10px',
                   fontSize: 14,
@@ -286,8 +461,9 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               />
             </div>
 
+            {/* Sender Selection */}
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 6 }}>
+              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 6, fontWeight: 500 }}>
                 Sender
               </label>
               <div style={{ display: 'flex', gap: 16 }}>
@@ -312,8 +488,9 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               </div>
             </div>
 
-            <div style={{ marginBottom: 18 }}>
-              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 6 }}>
+            {/* Theme Overlay Selection */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 6, fontWeight: 500 }}>
                 Theme Overlay
               </label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -327,8 +504,8 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                       backgroundColor: selectedTheme === thm.key ? '#0095F6' : '#262626',
                       color: selectedTheme === thm.key ? '#FFFFFF' : '#A8A8A8',
                       border: 'none',
-                      padding: '6px 10px',
-                      fontSize: 11,
+                      padding: '7px 11px',
+                      fontSize: 11.5,
                       fontWeight: selectedTheme === thm.key ? 700 : 400,
                       cursor: 'pointer'
                     }}
@@ -339,14 +516,91 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            {/* Custom Emoji Font with Live Preview for this message */}
+            <EmojiFontPreviewDropdown
+              value={selectedEmojiFont}
+              onChange={setSelectedEmojiFont}
+              messageText={editText}
+              chatDefaultFontFamily="SamsungOneUI_4_Xmas"
+              label="Message Emoji Style (Live Preview)"
+            />
+
+            {/* Bubble Reaction (প্রতিক্রিয়া) Selector */}
+            <div style={{ marginTop: 14, marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 500 }}>
+                  Bubble Reaction (প্রতিক্রিয়া)
+                </label>
+                {selectedReaction && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedReaction('')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#ED4956',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    Remove Reaction
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReaction('')}
+                  style={{
+                    borderRadius: 8,
+                    backgroundColor: !selectedReaction ? '#0095F6' : '#262626',
+                    color: !selectedReaction ? '#FFFFFF' : '#A8A8A8',
+                    border: 'none',
+                    padding: '6px 10px',
+                    fontSize: 12,
+                    fontWeight: !selectedReaction ? 700 : 400,
+                    cursor: 'pointer'
+                  }}
+                >
+                  None
+                </button>
+                {['❤️', '😂', '🔥', '😮', '😢', '👍', '🎉', '🙏', '😍', '💯'].map((emoji) => {
+                  const isSelected = selectedReaction === emoji;
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setSelectedReaction(isSelected ? '' : emoji)}
+                      style={{
+                        borderRadius: 8,
+                        backgroundColor: isSelected ? 'rgba(0, 149, 246, 0.25)' : '#262626',
+                        border: isSelected ? '1.5px solid #0095F6' : '1.5px solid transparent',
+                        padding: '4px 8px',
+                        fontSize: 18,
+                        cursor: 'pointer',
+                        lineHeight: 1,
+                        transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+                        transition: 'transform 0.15s ease'
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12, paddingBottom: 6 }}>
               <button
+                type="button"
                 onClick={() => setIsEditing(false)}
                 style={{
                   background: 'none',
                   border: 'none',
                   color: '#A8A8A8',
-                  padding: '8px 16px',
+                  padding: '9px 16px',
                   fontSize: 14,
                   cursor: 'pointer'
                 }}
@@ -354,8 +608,17 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => {
-                  onEditMessage(message.id, editText, editTimestamp, editIsMe, selectedTheme);
+                  onEditMessage(
+                    message.id,
+                    editText,
+                    editTimestamp,
+                    editIsMe,
+                    selectedTheme,
+                    selectedEmojiFont || undefined,
+                    selectedReaction || undefined
+                  );
                   onDismiss();
                 }}
                 style={{
@@ -363,10 +626,11 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                   color: '#FFFFFF',
                   borderRadius: 8,
                   border: 'none',
-                  padding: '8px 18px',
+                  padding: '9px 20px',
                   fontSize: 14,
                   fontWeight: 600,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 10px rgba(0, 149, 246, 0.4)'
                 }}
               >
                 Save Changes

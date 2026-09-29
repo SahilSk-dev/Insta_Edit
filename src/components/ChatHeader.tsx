@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { ChatProfile } from '../types/chat';
-import { ShieldHeartIcon, BlockSlashIcon } from './InstagramIcons';
+import { ShieldHeartIcon, BlockSlashIcon, CameraIcon } from './InstagramIcons';
 import { getAvatarUrl } from '../data/initialData';
+import { CropAvatarModal } from './CropAvatarModal';
 
 interface ChatHeaderProps {
   profile: ChatProfile;
@@ -9,6 +10,7 @@ interface ChatHeaderProps {
   onBlockClick: () => void;
   onProfileClick: () => void;
   onChangeAvatar: () => void;
+  onDirectAvatarUpload?: (dataUrl: string) => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -16,9 +18,27 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onSafetyTipsClick,
   onBlockClick,
   onProfileClick,
-  onChangeAvatar
+  onChangeAvatar,
+  onDirectAvatarUpload
 }) => {
   const avatarUrl = getAvatarUrl(profile.avatarName);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingCropImage, setPendingCropImage] = useState<string | null>(null);
+
+  const handleDirectFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const raw = event.target?.result as string;
+        if (raw) {
+          setPendingCropImage(raw);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
 
   return (
     <div
@@ -31,10 +51,28 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         userSelect: 'none'
       }}
     >
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleDirectFileChange}
+        accept="image/*"
+        style={{ display: 'none' }}
+      />
+
       {/* 96px Pure Round Avatar with subtle pulse / hover effect */}
       <div
-        onClick={onChangeAvatar}
-        title="Tap to change profile picture"
+        onClick={() => {
+          if (fileInputRef.current) {
+            fileInputRef.current.click();
+          } else {
+            onChangeAvatar();
+          }
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          onChangeAvatar();
+        }}
+        title="Tap to upload profile picture (Right-click for options)"
         style={{
           width: 96,
           height: 96,
@@ -45,13 +83,18 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           border: '2px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 4px 18px rgba(0, 0, 0, 0.5)',
           transition: 'transform 0.2s ease',
-          marginBottom: 14
+          marginBottom: 14,
+          position: 'relative'
         }}
       >
         <img
+          key={avatarUrl}
           src={avatarUrl}
           alt={profile.name}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/avatars/sahil_avatar.jpg';
+          }}
         />
       </div>
 
@@ -105,6 +148,20 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
       >
         View profile
       </button>
+
+      {/* Interactive Crop Popup Modal */}
+      {pendingCropImage && (
+        <CropAvatarModal
+          imageSrc={pendingCropImage}
+          onApply={(croppedUrl) => {
+            if (onDirectAvatarUpload) {
+              onDirectAvatarUpload(croppedUrl);
+            }
+            setPendingCropImage(null);
+          }}
+          onCancel={() => setPendingCropImage(null)}
+        />
+      )}
     </div>
   );
 };

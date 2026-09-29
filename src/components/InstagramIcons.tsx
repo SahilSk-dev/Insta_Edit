@@ -40,47 +40,114 @@ export const BlockSlashIcon: React.FC<IconProps> = ({ size = 28, color = '#FFFFF
   </svg>
 );
 
-export const InstagramTagIcon: React.FC<IconProps> = ({ size = 24, color = '#FFFFFF', style }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={style}>
-    <path
-      d="M 15 35 L 55 15 C 60 12, 65 12, 70 15 L 88 33 C 92 37, 92 43, 88 47 L 48 87 C 44 91, 38 91, 34 87 L 15 68 C 11 64, 11 58, 15 54 Z"
-      stroke={color}
-      strokeWidth="6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="68" cy="32" r="5" fill={color} />
+export const InstagramTagIcon: React.FC<IconProps> = ({ size = 23, color = '#FFFFFF', style }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="1.95"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={style}
+  >
+    <path d="M 2.6 11.8 L 2.6 4.2 C 2.6 3.2 3.4 2.4 4.4 2.4 L 14.2 2.4 C 14.7 2.4 15.2 2.6 15.5 3.0 L 22.3 9.8 C 23.0 10.5 23.0 11.6 22.3 12.3 L 13.9 21.6 C 13.2 22.3 12.1 22.3 11.4 21.6 L 3.1 13.3 C 2.8 12.9 2.6 12.4 2.6 11.8 Z" />
+    <circle cx="7.2" cy="7.2" r="1.35" fill={color} stroke="none" />
   </svg>
 );
 
-export const InstagramSmileyBubbleIcon: React.FC<IconProps> = ({ size = 24, color = '#FFFFFF', style }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={style}>
-    <path
-      d="M 50 12 C 85 12, 88 35, 88 50 C 88 75, 65 85, 45 85 L 28 92 C 23 94, 18 90, 20 85 L 22 78 C 12 72, 12 60, 12 50 C 12 25, 30 12, 50 12 Z"
-      stroke={color}
-      strokeWidth="6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+export const InstagramBlendIcon: React.FC<IconProps> = ({ size = 25, color = '#FFFFFF', style, className }) => {
+  if (color && color !== '#FFFFFF') {
+    return (
+      <div
+        className={className}
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: color,
+          WebkitMaskImage: 'url(/icons/instagram_blend.png)',
+          maskImage: 'url(/icons/instagram_blend.png)',
+          WebkitMaskSize: 'contain',
+          maskSize: 'contain',
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'center',
+          maskPosition: 'center',
+          display: 'inline-block',
+          flexShrink: 0,
+          userSelect: 'none',
+          ...style
+        }}
+      />
+    );
+  }
+
+  return (
+    <img
+      src="/icons/instagram_blend.png"
+      alt="Blend"
+      width={size}
+      height={size}
+      className={className}
+      draggable={false}
+      style={{
+        width: size,
+        height: size,
+        objectFit: 'contain',
+        display: 'block',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        ...style
+      }}
     />
-    <circle cx="38" cy="45" r="4" fill={color} />
-    <circle cx="62" cy="45" r="4" fill={color} />
+  );
+};
+
+export const InstagramSolidCameraIcon: React.FC<IconProps> = ({ size = 20, color = '#FFFFFF', style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
     <path
-      d="M 36 58 Q 50 70 64 58"
-      stroke={color}
-      strokeWidth="5"
-      strokeLinecap="round"
-      fill="none"
+      fill={color}
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M8.5 4.5A1.5 1.5 0 0 1 10 3h4a1.5 1.5 0 0 1 1.5 1.5V5h3.25A2.25 2.25 0 0 1 21 7.25v11.5A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V7.25A2.25 2.25 0 0 1 5.25 5H8.5v-.5zm3.5 13.5a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
     />
   </svg>
 );
 
-export const InstagramStickerIcon: React.FC<IconProps> = ({ size = 22, color = '#FFFFFF', style }) => (
+export const InstagramStickerPeelIcon: React.FC<IconProps> = ({ size = 23, color = '#FFFFFF', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <path d="M15 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V9l-6-6z" />
-    <path d="M15 3v6h6" />
-    <circle cx="9" cy="13" r="0.75" fill={color} />
-    <circle cx="15" cy="13" r="0.75" fill={color} />
-    <path d="M9 16c1 1 3 1 4 0" />
+    <path d="M 3 8 A 5 5 0 0 1 8 3 L 16 3 A 5 5 0 0 1 21 8 L 21 14.5 L 14.5 21 L 8 21 A 5 5 0 0 1 3 16 Z" />
+    <path d="M 14.5 21 C 15.5 17.5 17.5 15.5 21 14.5" />
+    <circle cx="8.5" cy="10.8" r="0.8" fill={color} stroke="none" />
+    <circle cx="15.5" cy="10.8" r="0.8" fill={color} stroke="none" />
+    <path d="M 9.5 14.5 c 1.5 1.5 3.5 1.5 5 0" />
+  </svg>
+);
+
+export const InstagramCirclePlusIcon: React.FC<IconProps> = ({ size = 23, color = '#FFFFFF', style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <circle cx="12" cy="12" r="9.5" />
+    <line x1="12" y1="7.5" x2="12" y2="16.5" />
+    <line x1="7.5" y1="12" x2="16.5" y2="12" />
+  </svg>
+);
+
+export const InstagramMicIcon: React.FC<IconProps> = ({ size = 23, color = '#FFFFFF', style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <rect x="8.5" y="2" width="7" height="11.5" rx="3.5" />
+    <path d="M5 10v1a7 7 0 0 0 14 0v-1" />
+    <line x1="12" y1="18.5" x2="12" y2="22" />
+    <line x1="8.5" y1="22" x2="15.5" y2="22" />
+  </svg>
+);
+
+export const InstagramGalleryIcon: React.FC<IconProps> = ({ size = 23, color = '#FFFFFF', style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <rect x="3" y="3" width="18" height="18" rx="4.5" />
+    <circle cx="8" cy="8" r="1.4" fill={color} stroke="none" />
+    <path d="M21 15.5l-5-5-8 8" />
+    <path d="M8 18.5l3.5-3.5 2.5 2.5" />
   </svg>
 );
 
@@ -91,12 +158,14 @@ export const BackIcon: React.FC<IconProps> = ({ size = 24, color = '#FFFFFF', st
   </svg>
 );
 
-export const VideoCallIcon: React.FC<IconProps> = ({ size = 26, color = '#FFFFFF', style }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <polygon points="23 7 16 12 23 17 23 7" />
-    <rect x="1" y="5" width="15" height="14" rx="3" ry="3" />
+export const VideoCallIcon: React.FC<IconProps> = ({ size = 25, color = '#FFFFFF', style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <rect x="2" y="6" width="13.5" height="12" rx="3.5" />
+    <polygon points="15.5 10 21.5 6.5 21.5 17.5 15.5 14" fill="none" />
   </svg>
 );
+
+export const InstagramVideoCallIcon = VideoCallIcon;
 
 export const CameraIcon: React.FC<IconProps> = ({ size = 22, color = '#FFFFFF', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -106,28 +175,19 @@ export const CameraIcon: React.FC<IconProps> = ({ size = 22, color = '#FFFFFF', 
 );
 
 export const MicIcon: React.FC<IconProps> = ({ size = 22, color = '#FFFFFF', style }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-    <line x1="12" y1="19" x2="12" y2="23" />
-    <line x1="8" y1="23" x2="16" y2="23" />
-  </svg>
+  <InstagramMicIcon size={size} color={color} style={style} />
 );
 
 export const GalleryIcon: React.FC<IconProps> = ({ size = 22, color = '#FFFFFF', style }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-    <circle cx="8.5" cy="8.5" r="1.5" />
-    <polyline points="21 15 16 10 5 21" />
-  </svg>
+  <InstagramGalleryIcon size={size} color={color} style={style} />
 );
 
 export const PlusIcon: React.FC<IconProps> = ({ size = 22, color = '#FFFFFF', style }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="8" x2="12" y2="16" />
-    <line x1="8" y1="12" x2="16" y2="12" />
-  </svg>
+  <InstagramCirclePlusIcon size={size} color={color} style={style} />
+);
+
+export const InstagramStickerIcon: React.FC<IconProps> = ({ size = 22, color = '#FFFFFF', style }) => (
+  <InstagramStickerPeelIcon size={size} color={color} style={style} />
 );
 
 export const PlayIcon: React.FC<IconProps> = ({ size = 18, color = '#FFFFFF', style }) => (
@@ -247,6 +307,27 @@ export const InfoIcon: React.FC<IconProps> = ({ size = 24, color = '#FFFFFF', st
 export const ChevronRightIcon: React.FC<IconProps> = ({ size = 16, color = '#FFFFFF', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
+export const InstagramReelEngineIcon: React.FC<IconProps> = ({ size = 23, color = '#FFFFFF', style }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="1.9"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={style}
+  >
+    <rect x="2" y="3" width="20" height="18" rx="4" />
+    <line x1="2" y1="9" x2="22" y2="9" />
+    <line x1="6" y1="3" x2="4" y2="9" />
+    <line x1="12" y1="3" x2="10" y2="9" />
+    <line x1="18" y1="3" x2="16" y2="9" />
+    <polygon points="10 12.5 15 15 10 17.5 10 12.5" fill={color} stroke="none" />
   </svg>
 );
 

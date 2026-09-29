@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChatProfile, ChatMessage, BubbleTheme } from '../types/chat';
 import { availableAvatars, getAvatarUrl } from '../data/initialData';
 import {
@@ -13,16 +13,20 @@ import {
 import { ClearChatModal } from './ClearChatModal';
 import { CropAvatarModal } from './CropAvatarModal';
 
+import { POPULAR_EMOJI_FONTS } from '../data/emojiFonts';
+import { EmojiFontPreviewDropdown } from './EmojiFontPreviewDropdown';
+
 interface BackendScreenProps {
   currentProfile: ChatProfile;
   messagesList: ChatMessage[];
   onSaveProfile: (profile: ChatProfile) => void;
-  onAddMessage: (text: string, isFromMe: boolean, timestamp: string, theme: BubbleTheme) => void;
-  onEditMessage: (id: string, newText: string, newTimestamp: string, isFromMe: boolean, theme: BubbleTheme) => void;
+  onAddMessage: (text: string, isFromMe: boolean, timestamp: string, theme: BubbleTheme, emojiFont?: string) => void;
+  onEditMessage: (id: string, newText: string, newTimestamp: string, isFromMe: boolean, theme: BubbleTheme, emojiFont?: string, reaction?: string) => void;
   onDeleteMessage: (id: string) => void;
   onClearAllMessages: () => void;
   onResetDefaults: () => void;
   onBackToDM: () => void;
+  onOpenLyricsVideoEngine?: () => void;
   onToast: (msg: string) => void;
 }
 
@@ -36,6 +40,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
   onClearAllMessages,
   onResetDefaults,
   onBackToDM,
+  onOpenLyricsVideoEngine,
   onToast
 }) => {
   const [selectedTab, setSelectedTab] = useState<0 | 1>(0); // 0: Profile, 1: Messages
@@ -56,12 +61,32 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
   const [autoReplyEnabled, setAutoReplyEnabled] = useState(currentProfile.autoReplyEnabled);
   const [isBlocked, setIsBlocked] = useState(currentProfile.isBlocked);
   const [avatarName, setAvatarName] = useState(currentProfile.avatarName);
+  const [emojiFont, setEmojiFont] = useState(currentProfile.emojiFont || 'SamsungOneUI_4_Xmas');
+
+  // Reactively sync form fields whenever currentProfile updates from DM (e.g. avatar/name/handle change)
+  useEffect(() => {
+    setName(currentProfile.name);
+    setHandle(currentProfile.handle);
+    setJoinedDate(currentProfile.joinedDate);
+    setFollowersCount(currentProfile.followersCount);
+    setPostsCount(currentProfile.postsCount);
+    setFollowingCount(currentProfile.followingCount);
+    setFollowsYouText(currentProfile.followsYouText);
+    setMutualFollowText(currentProfile.mutualFollowText);
+    setBio(currentProfile.bio);
+    setChatTimestamp(currentProfile.chatTimestamp);
+    setAutoReplyEnabled(currentProfile.autoReplyEnabled);
+    setIsBlocked(currentProfile.isBlocked);
+    setAvatarName(currentProfile.avatarName);
+    setEmojiFont(currentProfile.emojiFont || 'SamsungOneUI_4_Xmas');
+  }, [currentProfile]);
 
   // New message form state
   const [newMsgText, setNewMsgText] = useState('');
   const [newMsgIsMe, setNewMsgIsMe] = useState(true);
   const [newMsgTimestamp, setNewMsgTimestamp] = useState('12:44 PM');
   const [newMsgTheme, setNewMsgTheme] = useState<BubbleTheme>('CLASSIC');
+  const [newMsgEmojiFont, setNewMsgEmojiFont] = useState('');
 
   // Editing message modal state
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
@@ -69,6 +94,8 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
   const [editingMsgTimestamp, setEditingMsgTimestamp] = useState('');
   const [editingMsgIsMe, setEditingMsgIsMe] = useState(true);
   const [editingMsgTheme, setEditingMsgTheme] = useState<BubbleTheme>('CLASSIC');
+  const [editingMsgEmojiFont, setEditingMsgEmojiFont] = useState('');
+  const [editingMsgReaction, setEditingMsgReaction] = useState('');
 
   const themes: { key: BubbleTheme; label: string }[] = [
     { key: 'CLASSIC', label: 'Normal' },
@@ -91,6 +118,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = '';
   };
 
   const handleSaveProfile = () => {
@@ -108,7 +136,8 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
       chatTimestamp,
       autoReplyEnabled,
       isBlocked,
-      avatarName
+      avatarName,
+      emojiFont
     };
     onSaveProfile(updated);
     onToast('Profile updated! Applied to live DM.');
@@ -118,8 +147,9 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
   const handleAddCustomMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMsgText.trim()) return;
-    onAddMessage(newMsgText.trim(), newMsgIsMe, newMsgTimestamp, newMsgTheme);
+    onAddMessage(newMsgText.trim(), newMsgIsMe, newMsgTimestamp, newMsgTheme, newMsgEmojiFont || undefined);
     setNewMsgText('');
+    setNewMsgEmojiFont('');
     onToast('Message added to DM!');
   };
 
@@ -129,11 +159,21 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
     setEditingMsgTimestamp(msg.timestamp);
     setEditingMsgIsMe(msg.isFromMe);
     setEditingMsgTheme(msg.theme || 'CLASSIC');
+    setEditingMsgEmojiFont(msg.emojiFont || '');
+    setEditingMsgReaction(msg.reaction || '');
   };
 
   const saveEditedMessage = () => {
     if (editingMsgId) {
-      onEditMessage(editingMsgId, editingMsgText, editingMsgTimestamp, editingMsgIsMe, editingMsgTheme);
+      onEditMessage(
+        editingMsgId,
+        editingMsgText,
+        editingMsgTimestamp,
+        editingMsgIsMe,
+        editingMsgTheme,
+        editingMsgEmojiFont || undefined,
+        editingMsgReaction || undefined
+      );
       setEditingMsgId(null);
       onToast('Message edited successfully!');
     }
@@ -242,6 +282,30 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
             >
               <RefreshIcon size={20} />
             </button>
+
+            {/* Lyrics Video Engine button */}
+            {onOpenLyricsVideoEngine && (
+              <button
+                onClick={onOpenLyricsVideoEngine}
+                style={{
+                  background: 'linear-gradient(135deg, #FF1744 0%, #D500F9 100%)',
+                  color: '#FFFFFF',
+                  borderRadius: 8,
+                  border: 'none',
+                  padding: '6px 12px',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 10px rgba(255, 23, 68, 0.4)'
+                }}
+              >
+                <span>🎬</span>
+                <span>Video Engine</span>
+              </button>
+            )}
 
             {/* View Live DM button */}
             <button
@@ -517,6 +581,49 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
               </div>
             </div>
 
+            {/* Chat Emoji Font Selection */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 13, marginBottom: 8, fontWeight: 600 }}>
+                Chat Emoji Font
+              </label>
+              <select
+                value={emojiFont}
+                onChange={(e) => setEmojiFont(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: 44,
+                  borderRadius: 10,
+                  backgroundColor: '#1E1E1E',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#FFFFFF',
+                  padding: '0 12px',
+                  fontSize: 14,
+                  outline: 'none',
+                  cursor: 'pointer',
+                  marginBottom: 8
+                }}
+              >
+                {POPULAR_EMOJI_FONTS.map((f) => (
+                  <option key={f.id} value={f.fontFamily}>
+                    {f.name} {f.badge ? `(${f.badge})` : ''}
+                  </option>
+                ))}
+              </select>
+              <div
+                style={{
+                  padding: '10px 14px',
+                  backgroundColor: '#181818',
+                  borderRadius: 8,
+                  fontSize: 22,
+                  fontFamily: `'${emojiFont}', "Noto Color Emoji Custom", sans-serif`,
+                  letterSpacing: '3px',
+                  border: '1px solid rgba(255, 255, 255, 0.06)'
+                }}
+              >
+                🥹 🫰 ❤️‍🔥 🥀 🦋 ✨ 🥰 🔥 💀 🎉
+              </div>
+            </div>
+
             {/* Switches: Auto Reply & Block */}
             <div
               style={{
@@ -600,6 +707,50 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
         ) : (
           /* ================= TAB 1: CHAT MESSAGES MANAGER ================= */
           <div>
+            {/* Lyrics Video Engine Banner Card */}
+            {onOpenLyricsVideoEngine && (
+              <div
+                style={{
+                  backgroundColor: '#1E0E18',
+                  border: '1px solid #FF1744',
+                  borderRadius: 14,
+                  padding: '14px 16px',
+                  marginBottom: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 4px 18px rgba(255, 23, 68, 0.25)'
+                }}
+              >
+                <div>
+                  <div style={{ color: '#FFFFFF', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>🎬</span> Lyrics Video Engine
+                  </div>
+                  <div style={{ color: '#E0A0C0', fontSize: 12, marginTop: 2 }}>
+                    Record 9:16 vertical video reels of chat lyrics in pure 60 FPS
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenLyricsVideoEngine}
+                  style={{
+                    backgroundColor: '#FF1744',
+                    backgroundImage: 'linear-gradient(135deg, #FF1744 0%, #D500F9 100%)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '8px 14px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 10px rgba(255, 23, 68, 0.4)'
+                  }}
+                >
+                  Record Reel
+                </button>
+              </div>
+            )}
+
             <h3 style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 700, margin: '0 0 12px 0' }}>
               Add Custom Message into DM
             </h3>
@@ -695,6 +846,14 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
                   })}
                 </div>
               </div>
+
+              <EmojiFontPreviewDropdown
+                value={newMsgEmojiFont}
+                onChange={setNewMsgEmojiFont}
+                messageText={newMsgText}
+                chatDefaultFontFamily={currentProfile.emojiFont || 'SamsungOneUI_4_Xmas'}
+                label="Message Emoji Style"
+              />
 
               <button
                 type="submit"
@@ -870,6 +1029,8 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
             style={{
               width: '100%',
               maxWidth: 400,
+              maxHeight: '90vh',
+              overflowY: 'auto',
               backgroundColor: '#121212',
               borderRadius: 14,
               padding: 20,
@@ -954,6 +1115,60 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
                     {thm.label}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <EmojiFontPreviewDropdown
+              value={editingMsgEmojiFont}
+              onChange={setEditingMsgEmojiFont}
+              messageText={editingMsgText}
+              chatDefaultFontFamily={currentProfile.emojiFont || 'SamsungOneUI_4_Xmas'}
+              label="Message Emoji Style"
+            />
+
+            {/* Bubble Reaction */}
+            <div style={{ marginTop: 14, marginBottom: 16 }}>
+              <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, marginBottom: 6 }}>
+                Reaction Badge
+              </label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingMsgReaction('')}
+                  style={{
+                    borderRadius: 8,
+                    backgroundColor: !editingMsgReaction ? '#0095F6' : '#262626',
+                    color: !editingMsgReaction ? '#FFFFFF' : '#A8A8A8',
+                    border: 'none',
+                    padding: '6px 10px',
+                    fontSize: 11,
+                    fontWeight: !editingMsgReaction ? 700 : 400,
+                    cursor: 'pointer'
+                  }}
+                >
+                  None
+                </button>
+                {['❤️', '😂', '🔥', '😮', '😢', '👍', '🎉', '🙏', '😍', '💯'].map((emoji) => {
+                  const isSelected = editingMsgReaction === emoji;
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setEditingMsgReaction(isSelected ? '' : emoji)}
+                      style={{
+                        borderRadius: 8,
+                        backgroundColor: isSelected ? 'rgba(0, 149, 246, 0.25)' : '#262626',
+                        border: isSelected ? '1.5px solid #0095F6' : '1.5px solid transparent',
+                        padding: '4px 8px',
+                        fontSize: 16,
+                        cursor: 'pointer',
+                        lineHeight: 1
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

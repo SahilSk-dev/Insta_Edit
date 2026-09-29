@@ -16,6 +16,11 @@ import { MessageActionModal } from './components/MessageActionModal';
 import { ClearChatModal } from './components/ClearChatModal';
 import { ScreenshotModal } from './components/ScreenshotModal';
 import { SenderSelectModal } from './components/SenderSelectModal';
+import { EmojiFontSelectModal } from './components/EmojiFontSelectModal';
+import { LyricsVideoEngineModal } from './components/LyricsVideoEngineModal';
+import { CaptureModeModal } from './components/CaptureModeModal';
+import { captureBubblesScreenshot } from './utils/bubbleCanvasRenderer';
+import { setGlobalEmojiFont } from './data/emojiFonts';
 
 export const App: React.FC = () => {
   // Persistence with localStorage
@@ -24,16 +29,27 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem('insta_chat_profile');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (!parsed.avatarName || parsed.avatarName === 'avatar_cyber_samurai' || parsed.avatarName === 'avatar_gold_tiger') {
+        if (!parsed.avatarName) {
           parsed.avatarName = 'sahil_avatar';
         }
-        if (!parsed.handle || parsed.handle === 'md.sahil_sk_') {
+        if (!parsed.handle) {
           parsed.handle = 'not__ur__sahil_77';
         }
-        if (!parsed.name || parsed.name === 'Sahil Sk' || parsed.name.includes('🦋')) {
+        if (!parsed.name) {
           parsed.name = 'Sahil';
         }
-        parsed.autoReplyEnabled = false;
+        if (!parsed.bio || parsed.bio.includes('Free Fire') || parsed.bio.includes('Booyah') || parsed.bio.includes('Headshot') || parsed.bio === 'Develop by Sahil') {
+          parsed.bio = 'Developed by Sahil';
+        }
+        if (!parsed.followersCount || parsed.followersCount === '108') {
+          parsed.followersCount = '3,000';
+        }
+        if (!parsed.followingCount || parsed.followingCount === '142') {
+          parsed.followingCount = '10';
+        }
+        if (!parsed.emojiFont) {
+          parsed.emojiFont = 'SamsungOneUI_4_Xmas';
+        }
         return parsed;
       }
       return initialProfile;
@@ -45,7 +61,18 @@ export const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       const saved = localStorage.getItem('insta_chat_messages');
-      return saved ? JSON.parse(saved) : initialMessages;
+      if (saved) {
+        const parsed: ChatMessage[] = JSON.parse(saved);
+        // Automatically migrate if previous messages had old gaming text/images or no Luxe bubble
+        if (
+          parsed.some((m) => m.text?.includes('Free Fire') || m.type === 'IMAGE' || m.type === 'AUDIO') ||
+          !parsed.some((m) => m.theme === 'GOLDEN_LUXE')
+        ) {
+          return initialMessages;
+        }
+        return parsed;
+      }
+      return initialMessages;
     } catch {
       return initialMessages;
     }
@@ -56,6 +83,11 @@ export const App: React.FC = () => {
       localStorage.setItem('insta_chat_profile', JSON.stringify(profile));
     } catch {}
   }, [profile]);
+
+  useEffect(() => {
+    const currentEmojiFont = profile.emojiFont || 'SamsungOneUI_4_Xmas';
+    setGlobalEmojiFont(currentEmojiFont);
+  }, [profile.emojiFont]);
 
   useEffect(() => {
     try {
@@ -79,6 +111,9 @@ export const App: React.FC = () => {
   const [selectedMessageForAction, setSelectedMessageForAction] = useState<ChatMessage | null>(null);
   const [capturedScreenshotUrl, setCapturedScreenshotUrl] = useState<string | null>(null);
   const [pendingMessageText, setPendingMessageText] = useState<string | null>(null);
+  const [showEmojiFontModal, setShowEmojiFontModal] = useState(false);
+  const [showLyricsVideoEngine, setShowLyricsVideoEngine] = useState(false);
+  const [showCaptureModeModal, setShowCaptureModeModal] = useState(false);
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -93,6 +128,7 @@ export const App: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatScrollContainerRef = useRef<HTMLDivElement>(null);
   const captureAreaRef = useRef<HTMLDivElement>(null);
+  const onlyChatBubblesRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -115,7 +151,8 @@ export const App: React.FC = () => {
     imageResName?: string,
     audioDuration?: string,
     theme: BubbleTheme = 'CLASSIC',
-    customTimestamp?: string
+    customTimestamp?: string,
+    emojiFont?: string
   ) => {
     if (profile.isBlocked && isFromMe) {
       showToast('You cannot message a blocked user.');
@@ -132,6 +169,7 @@ export const App: React.FC = () => {
       imageResName,
       audioDuration,
       theme,
+      emojiFont,
       orderIndex: Date.now()
     };
 
@@ -144,12 +182,22 @@ export const App: React.FC = () => {
     newText: string,
     newTimestamp: string,
     isFromMe: boolean,
-    theme: BubbleTheme
+    theme: BubbleTheme,
+    emojiFont?: string,
+    reaction?: string
   ) => {
     setMessages((prev) =>
       prev.map((msg) =>
         msg.id === id
-          ? { ...msg, text: newText, timestamp: newTimestamp, isFromMe, theme }
+          ? {
+              ...msg,
+              text: newText,
+              timestamp: newTimestamp,
+              isFromMe,
+              theme,
+              emojiFont,
+              reaction: reaction !== undefined ? (reaction || undefined) : msg.reaction
+            }
           : msg
       )
     );
@@ -158,6 +206,19 @@ export const App: React.FC = () => {
   // Delete message
   const handleDeleteMessage = (id: string) => {
     setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  };
+
+  // React to message with emoji badge (Instagram DM style)
+  const handleReactToMessage = (messageId: string, emoji: string) => {
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.id === messageId) {
+          const nextReaction = msg.reaction === emoji ? undefined : emoji;
+          return { ...msg, reaction: nextReaction };
+        }
+        return msg;
+      })
+    );
   };
 
   // Clear all messages
@@ -176,19 +237,32 @@ export const App: React.FC = () => {
     showToast('Reset all data to default template!');
   };
 
-  // Screenshot capture using html2canvas
-  const handleCaptureScreenshot = async () => {
-    if (!captureAreaRef.current) return;
+  // Screenshot capture: Native 2x canvas engine for pure bubbles, html2canvas for full app
+  const handleCaptureScreenshot = async (onlyBubbles: boolean = true) => {
     try {
-      showToast('Capturing full chat...');
-      const canvas = await html2canvas(captureAreaRef.current, {
-        backgroundColor: '#000000',
-        scale: 2,
-        useCORS: true,
-        logging: false
-      });
-      const dataUrl = canvas.toDataURL('image/png');
-      setCapturedScreenshotUrl(dataUrl);
+      showToast(onlyBubbles ? 'Capturing bubbles screenshot...' : 'Capturing chat screenshot...');
+      if (onlyBubbles) {
+        // Crisp 2x native canvas rendering: Eliminates all html2canvas distortion & wide desktop stretch!
+        const dataUrl = await captureBubblesScreenshot(messages, {
+          scale: 2,
+          baseWidth: 380,
+          emojiFont: profile.emojiFont || 'SamsungOneUI_4_Xmas',
+          avatarUrl: getAvatarUrl(profile.avatarName)
+        });
+        setCapturedScreenshotUrl(dataUrl);
+        return;
+      }
+
+      if (captureAreaRef.current) {
+        const canvas = await html2canvas(captureAreaRef.current, {
+          backgroundColor: '#000000',
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+        const dataUrl = canvas.toDataURL('image/png');
+        setCapturedScreenshotUrl(dataUrl);
+      }
     } catch (err) {
       showToast('Unable to capture screenshot');
     }
@@ -203,28 +277,33 @@ export const App: React.FC = () => {
         left: 0,
         right: 0,
         bottom: 0,
-        width: '100vw',
+        width: '100%',
+        maxWidth: '100vw',
         height: '100dvh',
         backgroundColor: '#000000',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
         overflow: 'hidden',
-        boxSizing: 'border-box'
-      }}
+        overflowX: 'hidden',
+        boxSizing: 'border-box',
+        '--active-emoji-font': `'${profile.emojiFont || 'SamsungOneUI_4_Xmas'}'`
+      } as React.CSSProperties}
     >
       {currentScreen === 'BACKEND' ? (
         <BackendScreen
           currentProfile={profile}
           messagesList={messages}
           onSaveProfile={(updated) => setProfile(updated)}
-          onAddMessage={(text, isMe, time, theme) =>
-            handleSendMessage(text, isMe, 'TEXT', undefined, undefined, theme, time)
+          onAddMessage={(text, isMe, time, theme, emojiFont) =>
+            handleSendMessage(text, isMe, 'TEXT', undefined, undefined, theme, time, emojiFont)
           }
           onEditMessage={handleEditMessage}
           onDeleteMessage={handleDeleteMessage}
           onClearAllMessages={handleClearAll}
           onResetDefaults={handleResetDefaults}
           onBackToDM={() => setCurrentScreen('DM')}
+          onOpenLyricsVideoEngine={() => setShowLyricsVideoEngine(true)}
           onToast={showToast}
         />
       ) : (
@@ -232,6 +311,7 @@ export const App: React.FC = () => {
         <div
           style={{
             width: '100%',
+            maxWidth: 480,
             height: '100%',
             flex: 1,
             minHeight: 0,
@@ -250,9 +330,11 @@ export const App: React.FC = () => {
             onProfileClick={() => setShowProfileSheet(true)}
             onChangeAvatar={() => setShowChangeAvatar(true)}
             onVideoCallClick={() => setShowVideoCall(true)}
-            onTagCaptureScreenshot={handleCaptureScreenshot}
+            onTagClick={() => setShowCaptureModeModal(true)}
             onOpenBackend={() => setCurrentScreen('BACKEND')}
             onClearChatClick={() => setShowClearChat(true)}
+            onOpenEmojiFontSelect={() => setShowEmojiFontModal(true)}
+            activeEmojiFont={profile.emojiFont || 'SamsungOneUI_4_Xmas'}
           />
 
           {/* Scrollable Chat Area */}
@@ -286,6 +368,18 @@ export const App: React.FC = () => {
                 }}
                 onProfileClick={() => setShowProfileSheet(true)}
                 onChangeAvatar={() => setShowChangeAvatar(true)}
+                onDirectAvatarUpload={(newAvatar) => {
+                  setProfile((p) => {
+                    const updated = { ...p, avatarName: newAvatar };
+                    try {
+                      localStorage.setItem('insta_chat_profile', JSON.stringify(updated));
+                    } catch (e) {
+                      console.warn('localStorage save warning:', e);
+                    }
+                    return updated;
+                  });
+                  showToast('Profile picture updated!');
+                }}
               />
 
               {/* Centered Conversation Timestamp */}
@@ -302,17 +396,29 @@ export const App: React.FC = () => {
                 {profile.chatTimestamp}
               </div>
 
-              {/* Messages list */}
-              {messages.map((msg) => (
-                <ChatMessageItem
-                  key={msg.id}
-                  message={msg}
-                  senderName={profile.name}
-                  avatarName={profile.avatarName}
-                  onAvatarClick={() => setShowProfileSheet(true)}
-                  onMessageClick={(m) => setSelectedMessageForAction(m)}
-                />
-              ))}
+              {/* Messages list (Wrapped in dedicated ref for clean bubbles-only Screenshot & Video Recording) */}
+              <div
+                ref={onlyChatBubblesRef}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#000000',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {messages.map((msg) => (
+                  <ChatMessageItem
+                    key={msg.id}
+                    message={msg}
+                    senderName={profile.name}
+                    avatarName={profile.avatarName}
+                    chatEmojiFont={profile.emojiFont || 'SamsungOneUI_4_Xmas'}
+                    onAvatarClick={() => setShowProfileSheet(true)}
+                    onMessageClick={(m) => setSelectedMessageForAction(m)}
+                  />
+                ))}
+              </div>
 
               {/* Live typing indicator */}
               {isTyping && (
@@ -334,8 +440,9 @@ export const App: React.FC = () => {
                     }}
                   >
                     <img
+                      key={getAvatarUrl(profile.avatarName)}
                       src={getAvatarUrl(profile.avatarName)}
-                      alt="Sahil"
+                      alt={profile.name}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/avatars/sahil_avatar.jpg';
@@ -428,6 +535,7 @@ export const App: React.FC = () => {
                 setProfile((p) => ({ ...p, isBlocked: false }));
                 showToast(`Unblocked ${profile.handle}`);
               }}
+              onDeleteChatClick={() => setShowClearChat(true)}
             />
           </div>
         )}
@@ -460,6 +568,22 @@ export const App: React.FC = () => {
               setShowProfileSheet(false);
               setShowBlockDialog(true);
             }}
+            onOpenEmojiFontSelect={() => {
+              setShowProfileSheet(false);
+              setShowEmojiFontModal(true);
+            }}
+            onAvatarUpload={(newAvatar) => {
+              setProfile((p) => {
+                const updated = { ...p, avatarName: newAvatar };
+                try {
+                  localStorage.setItem('insta_chat_profile', JSON.stringify(updated));
+                } catch (e) {
+                  console.warn('localStorage save warning:', e);
+                }
+                return updated;
+              });
+              showToast('Profile picture updated!');
+            }}
           />
         )}
 
@@ -468,7 +592,15 @@ export const App: React.FC = () => {
           <ChangeAvatarModal
             currentAvatarName={profile.avatarName}
             onAvatarSelected={(newAvatar) => {
-              setProfile((p) => ({ ...p, avatarName: newAvatar }));
+              setProfile((p) => {
+                const updated = { ...p, avatarName: newAvatar };
+                try {
+                  localStorage.setItem('insta_chat_profile', JSON.stringify(updated));
+                } catch (e) {
+                  console.warn('localStorage quota warning:', e);
+                }
+                return updated;
+              });
               showToast('Profile picture updated!');
             }}
             onDismiss={() => setShowChangeAvatar(false)}
@@ -480,8 +612,8 @@ export const App: React.FC = () => {
           <MessageActionModal
             message={selectedMessageForAction}
             contactName={profile.name}
-            onEditMessage={(id, text, time, isMe, theme) => {
-              handleEditMessage(id, text, time, isMe, theme);
+            onEditMessage={(id, text, time, isMe, theme, emojiFont, reaction) => {
+              handleEditMessage(id, text, time, isMe, theme, emojiFont, reaction);
               setSelectedMessageForAction(null);
               showToast('Message updated!');
             }}
@@ -491,10 +623,24 @@ export const App: React.FC = () => {
               showToast('Message removed!');
             }}
             onReactEmoji={(emoji) => {
-              handleSendMessage(emoji, true, 'STICKER');
+              handleReactToMessage(selectedMessageForAction.id, emoji);
               setSelectedMessageForAction(null);
+              showToast('Reaction updated!');
             }}
             onDismiss={() => setSelectedMessageForAction(null)}
+          />
+        )}
+
+        {/* Modal: Emoji Font Select */}
+        {showEmojiFontModal && (
+          <EmojiFontSelectModal
+            currentFontFamily={profile.emojiFont || 'SamsungOneUI_4_Xmas'}
+            onSelectFont={(fontName) => {
+              setProfile((p) => ({ ...p, emojiFont: fontName }));
+              showToast(`Emoji font set: ${fontName}`);
+            }}
+            onDismiss={() => setShowEmojiFontModal(false)}
+            onToast={showToast}
           />
         )}
 
@@ -538,6 +684,28 @@ export const App: React.FC = () => {
               setInputText('');
             }}
             onDismiss={() => setPendingMessageText(null)}
+          />
+        )}
+
+        {/* Modal: Capture Mode Selection (Screenshot vs Video Record Toggle) */}
+        {showCaptureModeModal && (
+          <CaptureModeModal
+            onTakeScreenshot={handleCaptureScreenshot}
+            onOpenVideoEngine={() => setShowLyricsVideoEngine(true)}
+            onDismiss={() => setShowCaptureModeModal(false)}
+          />
+        )}
+
+        {/* Modal: Lyrics Video Engine (Live Record Bubbles Video) */}
+        {showLyricsVideoEngine && (
+          <LyricsVideoEngineModal
+            currentMessages={messages}
+            emojiFont={profile.emojiFont || 'SamsungOneUI_4_Xmas'}
+            avatarUrl={getAvatarUrl(profile.avatarName)}
+            onDismiss={() => setShowLyricsVideoEngine(false)}
+            onScreenshotCapture={(dataUrl) => {
+              setCapturedScreenshotUrl(dataUrl);
+            }}
           />
         )}
 

@@ -17,6 +17,8 @@ export interface ChatMessage {
   audioDuration?: string;
   theme: BubbleTheme;
   orderIndex: number;
+  emojiFont?: string;
+  reaction?: string;
 }
 
 export interface ChatProfile {
@@ -34,6 +36,7 @@ export interface ChatProfile {
   isBlocked: boolean;
   autoReplyEnabled: boolean;
   avatarName: string;
+  emojiFont?: string;
 }
 
 export interface AvatarOption {

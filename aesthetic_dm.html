@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aesthetic DM Styles ❤️🔥🦋⚡✨</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #000000;
+    display: flex; justify-content: center;
+    padding: 60px 20px;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+
+  .bg-heart {
+    position: fixed; bottom: -40px;
+    color: rgba(255, 42, 109, 0.12);
+    animation: bgRise 13s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes bgRise {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+    15%  { opacity: .13; }
+    100% { transform: translateY(-115vh) rotate(25deg); opacity: 0; }
+  }
+
+  .chat { width: min(680px, 100%); display: flex; flex-direction: column; gap: 15px; }
+  .title { text-align:center; color:#FF2A6D; font-size:13px; letter-spacing:5px; text-transform:uppercase; font-weight: 700; margin-bottom: 5px; }
+
+  .row { display:flex; align-items:flex-end; gap:12px; }
+  .row.her { flex-direction: row-reverse; }
+
+  /* Avatar with spinning conic border - strictly overflow: hidden */
+  .avatar { width:46px; height:46px; border-radius:50%; position:relative; overflow:hidden; flex:none; }
+  .avatar::before {
+    content:""; position:absolute; inset:-60%;
+    background: conic-gradient(var(--c1), var(--c2), var(--c3), var(--c1));
+    animation: spin var(--speed, 4.5s) linear infinite;
+  }
+  .avatar span {
+    position:absolute; inset:2px; border-radius:50%;
+    background:#0a0a0a; display:grid; place-items:center; font-size:20px;
+  }
+
+  /* Outer wrapper: Holds corner edge icons freely without clipping */
+  .bubble-wrap {
+    position: relative;
+    max-width: 78%;
+  }
+
+  /* Neon Border Container: STRICTLY overflow: hidden so spinning gradient NEVER leaks! */
+  .neon {
+    position: relative;
+    overflow: hidden; /* <--- Lined up & locked: No background spinning fan blades! */
+    border-radius: 20px;
+    padding: 2px;
+    box-shadow: 0 0 14px var(--glowA);
+  }
+  .neon::before {
+    content:""; position:absolute; inset:-120%; border-radius:inherit;
+    background: var(--beam, conic-gradient(var(--c1), var(--c2), var(--c3), var(--c1)));
+    animation: spin var(--speed, 4s) linear infinite;
+    z-index: 0;
+  }
+  .row.her .neon::before { animation-direction: reverse; }
+  @keyframes spin { to { transform: rotate(1turn); } }
+
+  .neon-inner {
+    position:relative; overflow:hidden;
+    border-radius:18px;
+    background: var(--bg);
+    padding: 14px 20px;
+    animation: pulse 3s ease-in-out infinite;
+    z-index: 1;
+    border: 1px solid var(--border-glow, rgba(255,255,255,0.1));
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: inset 0 0 6px var(--glowA); }
+    50%     { box-shadow: inset 0 0 14px var(--glowB); }
+  }
+
+  .sweep {
+    position:absolute; top:0; bottom:0; width:80px; left:-90px;
+    background: linear-gradient(90deg, transparent, var(--sweep) 45%, rgba(255,255,255,.35) 50%, var(--sweep) 55%, transparent);
+    animation: scanMove 3.4s ease-in-out infinite;
+  }
+  @keyframes scanMove { to { left: 110%; } }
+
+  .fh { position:absolute; bottom:-16px; color:var(--txt); opacity:0; animation: rise 4.5s linear infinite; pointer-events: none; }
+  @keyframes rise {
+    0%   { transform: translateY(0) scale(.6); opacity:0; }
+    15%  { opacity:.8; }
+    100% { transform: translateY(-80px) scale(1.1); opacity:0; }
+  }
+  .spark { position:absolute; color:var(--txt); opacity:0; animation: twinkle 2.8s ease-in-out infinite; pointer-events: none; }
+  @keyframes twinkle {
+    0%,100% { opacity:0; transform: scale(.2) rotate(-30deg); }
+    50%     { opacity:1; transform: scale(1) rotate(25deg); }
+  }
+
+  .msg {
+    position:relative; z-index:3;
+    font-size:15.5px; line-height:1.5;
+    color: #ffffff;
+    font-weight: 500;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg-text {
+    background: linear-gradient(90deg, #fff, var(--txt), #fff);
+    background-size:250% 100%;
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color: transparent;
+    color:transparent;
+    white-space: pre-wrap;
+    animation: flow 4s linear infinite;
+  }
+  .msg-emoji {
+    -webkit-text-fill-color: initial;
+    color: initial;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    display: inline;
+  }
+  @keyframes flow { 0%{background-position:0% 50%} 100%{background-position:250% 50%} }
+
+  /* Corner Edge Icons (Ruby Heart, Butterfly, Sparkles) */
+  .edge-icon {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .edge-icon.top-r { top: -8px; right: -6px; }
+  .row.her .edge-icon.top-r { right: auto; left: -6px; }
+  .edge-icon.bot-l { bottom: -5px; left: -4px; }
+  .row.her .edge-icon.bot-l { left: auto; right: -4px; }
+
+  /* =========================================================================
+     PROJECT 4 THEMES - EXACT HUBHU COLORS FROM AestheticBubble.tsx
+     ========================================================================= */
+
+  /* 1. OBSIDIAN_HEART ❤️🔥 */
+  .e-obsidian {
+    --c1: #FF2A6D; --c2: #FF758C; --c3: #990024;
+    --beam: conic-gradient(from 0deg, #990024 0%, #FF2A6D 35%, #FF758C 60%, #FFFFFF 72%, #FF2A6D 82%, #990024 100%);
+    --bg: linear-gradient(135deg, #1B0C16 0%, #2A0822 50%, #150616 100%);
+    --border-glow: #FF2A6D;
+    --glowA: rgba(255, 42, 109, 0.4);
+    --glowB: rgba(255, 42, 109, 0.7);
+    --sweep: rgba(255, 117, 140, 0.4);
+    --txt: #FF758C;
+    --speed: 4s;
+  }
+
+  /* 2. MIDNIGHT_BUTTERFLY 🦋 */
+  .e-butterfly {
+    --c1: #00E5FF; --c2: #D500F9; --c3: #651FFF;
+    --beam: conic-gradient(from 0deg, #651FFF 0%, #D500F9 35%, #00E5FF 60%, #FFFFFF 72%, #00E5FF 82%, #651FFF 100%);
+    --bg: linear-gradient(135deg, #0F0C29 0%, #302B63 50%, #24243E 100%);
+    --border-glow: #00E5FF;
+    --glowA: rgba(0, 229, 255, 0.4);
+    --glowB: rgba(213, 0, 249, 0.6);
+    --sweep: rgba(0, 229, 255, 0.4);
+    --txt: #A7F3D0;
+    --speed: 4.2s;
+  }
+
+  /* 3. NEON_CYBER ⚡ */
+  .e-cyber {
+    --c1: #00F0FF; --c2: #0077B6; --c3: #00E5FF;
+    --beam: conic-gradient(from 0deg, #003554 0%, #0077B6 35%, #00F0FF 60%, #FFFFFF 72%, #00F0FF 82%, #003554 100%);
+    --bg: linear-gradient(135deg, #051923 0%, #003554 100%);
+    --border-glow: #00F0FF;
+    --glowA: rgba(0, 240, 255, 0.45);
+    --glowB: rgba(0, 240, 255, 0.75);
+    --sweep: rgba(0, 240, 255, 0.4);
+    --txt: #E0FBFC;
+    --speed: 3.8s;
+  }
+
+  /* 4. GOLDEN_LUXE ✨ */
+  .e-luxe {
+    --c1: #FFD700; --c2: #FFA500; --c3: #FF8C00;
+    --beam: conic-gradient(from 0deg, #FF8C00 0%, #FFA500 35%, #FFD700 60%, #FFFFFF 72%, #FFD700 82%, #FF8C00 100%);
+    --bg: linear-gradient(135deg, #2C1E03 0%, #4A3408 100%);
+    --border-glow: #FFD700;
+    --glowA: rgba(255, 215, 0, 0.4);
+    --glowB: rgba(255, 215, 0, 0.75);
+    --sweep: rgba(255, 215, 0, 0.4);
+    --txt: #FFFDF0;
+    --speed: 4.2s;
+  }
+
+  .beat { align-self:center; font-size:26px; animation: heartbeat 1.4s ease-in-out infinite; }
+  @keyframes heartbeat {
+    0%,100% { transform: scale(1); }
+    30%     { transform: scale(1.25); }
+    45%     { transform: scale(1.05); }
+    60%     { transform: scale(1.18); }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+
+  <span class="bg-heart" style="left:8%;  font-size:16px; animation-delay:0s">♥</span>
+  <span class="bg-heart" style="left:30%; font-size:22px; animation-delay:3s">♥</span>
+  <span class="bg-heart" style="left:55%; font-size:14px; animation-delay:6s">♥</span>
+  <span class="bg-heart" style="left:78%; font-size:20px; animation-delay:9s">♥</span>
+
+  <div class="chat">
+    <div class="title">— AESTHETIC THEMES —</div>
+
+    <!-- 1. OBSIDIAN_HEART ❤️🔥 -->
+    <div class="row him">
+      <div class="avatar e-obsidian"><span>❤️🔥</span></div>
+      <div class="bubble-wrap">
+        <!-- Exact Project RubyHeart SVG on edges -->
+        <svg class="edge-icon top-r" width="18" height="18" viewBox="0 0 100 100" style="transform: rotate(-16deg); filter: drop-shadow(0 2px 5px rgba(255, 22, 84, 0.6));">
+          <defs>
+            <linearGradient id="rubyGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FF758C" />
+              <stop offset="50%" stop-color="#FF1654" />
+              <stop offset="100%" stop-color="#990024" />
+            </linearGradient>
+          </defs>
+          <path d="M 50 88 C 12 62, 0 42, 0 26 C 0 8, 22 0, 50 28 C 78 0, 100 8, 100 26 C 100 42, 88 62, 50 88 Z" fill="url(#rubyGrad1)" />
+        </svg>
+        <svg class="edge-icon bot-l" width="13" height="13" viewBox="0 0 100 100" style="transform: rotate(14deg); filter: drop-shadow(0 2px 5px rgba(255, 22, 84, 0.6));">
+          <path d="M 50 88 C 12 62, 0 42, 0 26 C 0 8, 22 0, 50 28 C 78 0, 100 8, 100 26 C 100 42, 88 62, 50 88 Z" fill="url(#rubyGrad1)" />
+        </svg>
+
+        <div class="neon e-obsidian">
+          <div class="neon-inner">
+            <div class="sweep"></div>
+            <span class="spark" style="top:18%; left:8%;  animation-delay:.4s">✦</span>
+            <span class="spark" style="top:60%; left:88%; animation-delay:1.6s">✦</span>
+            <span class="fh" style="left:20%; font-size:11px; animation-delay:.5s">♥</span>
+            <span class="fh" style="left:70%; font-size:13px; animation-delay:2.2s">♥</span>
+            <p class="msg"><span class="msg-text">Shono... aaj raater akash ta dekhchilam, ar chokhe chokhe shudhu tumi. </span><span class="msg-emoji">🌙❤️🔥</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. MIDNIGHT_BUTTERFLY 🦋 -->
+    <div class="row her">
+      <div class="avatar e-butterfly"><span>🦋</span></div>
+      <div class="bubble-wrap">
+        <!-- Exact Project GlowingButterfly SVG on edges -->
+        <svg class="edge-icon top-r" width="20" height="20" viewBox="0 0 100 100" style="transform: rotate(18deg); filter: drop-shadow(0 2px 5px #00E5FF88);">
+          <defs>
+            <linearGradient id="bfGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00E5FF" />
+              <stop offset="50%" stop-color="#D500F9" />
+              <stop offset="100%" stop-color="#651FFF" />
+            </linearGradient>
+          </defs>
+          <path d="M 50 50 C 30 10, 5 15, 8 40 C 10 60, 35 60, 50 50 Z" fill="url(#bfGrad1)" />
+          <path d="M 50 50 C 70 10, 95 15, 92 40 C 90 60, 65 60, 50 50 Z" fill="url(#bfGrad1)" />
+          <path d="M 50 50 C 35 65, 15 75, 22 90 C 30 98, 45 75, 50 50 Z" fill="url(#bfGrad1)" />
+          <path d="M 50 50 C 65 65, 85 75, 78 90 C 70 98, 55 75, 50 50 Z" fill="url(#bfGrad1)" />
+          <line x1="50" y1="30" x2="50" y2="75" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" />
+        </svg>
+        <svg class="edge-icon bot-l" width="14" height="14" viewBox="0 0 100 100" style="transform: rotate(-16deg); filter: drop-shadow(0 2px 5px #00E5FF88);">
+          <defs>
+            <linearGradient id="bfGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FF4081" />
+              <stop offset="100%" stop-color="#7C4DFF" />
+            </linearGradient>
+          </defs>
+          <path d="M 50 50 C 30 10, 5 15, 8 40 C 10 60, 35 60, 50 50 Z" fill="url(#bfGrad2)" />
+          <path d="M 50 50 C 70 10, 95 15, 92 40 C 90 60, 65 60, 50 50 Z" fill="url(#bfGrad2)" />
+          <path d="M 50 50 C 35 65, 15 75, 22 90 C 30 98, 45 75, 50 50 Z" fill="url(#bfGrad2)" />
+          <path d="M 50 50 C 65 65, 85 75, 78 90 C 70 98, 55 75, 50 50 Z" fill="url(#bfGrad2)" />
+          <line x1="50" y1="30" x2="50" y2="75" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" />
+        </svg>
+
+        <div class="neon e-butterfly">
+          <div class="neon-inner">
+            <div class="sweep"></div>
+            <span class="spark" style="top:20%; left:90%; animation-delay:.8s">✦</span>
+            <span class="spark" style="top:65%; left:6%;  animation-delay:2s">✦</span>
+            <span class="fh" style="left:35%; font-size:12px; animation-delay:1s">♥</span>
+            <p class="msg"><span class="msg-text">Tumi amar moner majhe ekla projapoti... ghumi aschhe na ekdom. </span><span class="msg-emoji">🦋✨</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat">💗</div>
+
+    <!-- 3. NEON_CYBER ⚡ -->
+    <div class="row him">
+      <div class="avatar e-cyber"><span>⚡</span></div>
+      <div class="bubble-wrap">
+        <!-- Exact Project LuxeSparkle SVG on edges (Cyber Cyan) -->
+        <svg class="edge-icon top-r" width="16" height="16" viewBox="0 0 100 100" style="transform: rotate(45deg); filter: drop-shadow(0 2px 5px rgba(0, 240, 255, 0.6));">
+          <defs>
+            <radialGradient id="cyberGrad" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stop-color="#E0FBFC" />
+              <stop offset="60%" stop-color="#00F0FF" />
+              <stop offset="100%" stop-color="#0077B6" />
+            </radialGradient>
+          </defs>
+          <path d="M 50 0 C 50 35, 65 50, 100 50 C 65 50, 50 65, 50 100 C 50 65, 35 50, 0 50 C 35 50, 50 35, 50 0 Z" fill="url(#cyberGrad)" />
+        </svg>
+        <svg class="edge-icon bot-l" width="12" height="12" viewBox="0 0 100 100" style="transform: rotate(15deg); filter: drop-shadow(0 2px 5px rgba(0, 240, 255, 0.6));">
+          <path d="M 50 0 C 50 35, 65 50, 100 50 C 65 50, 50 65, 50 100 C 50 65, 35 50, 0 50 C 35 50, 50 35, 50 0 Z" fill="url(#cyberGrad)" />
+        </svg>
+
+        <div class="neon e-cyber">
+          <div class="neon-inner">
+            <div class="sweep"></div>
+            <span class="spark" style="top:25%; left:92%; animation-delay:1.2s">✦</span>
+            <span class="fh" style="left:50%; font-size:12px; animation-delay:1.4s">♥</span>
+            <p class="msg"><span class="msg-text">Cyber vibes on point... squad ready for the match tonight! </span><span class="msg-emoji">⚡🔥</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. GOLDEN_LUXE ✨ -->
+    <div class="row her">
+      <div class="avatar e-luxe"><span>👑</span></div>
+      <div class="bubble-wrap">
+        <!-- Exact Project LuxeSparkle SVG on edges (Gold) -->
+        <svg class="edge-icon top-r" width="18" height="18" viewBox="0 0 100 100" style="transform: rotate(12deg); filter: drop-shadow(0 2px 5px rgba(255, 215, 0, 0.6));">
+          <defs>
+            <radialGradient id="goldGrad1" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stop-color="#FFF7C2" />
+              <stop offset="60%" stop-color="#FFD700" />
+              <stop offset="100%" stop-color="#FF8C00" />
+            </radialGradient>
+          </defs>
+          <path d="M 50 0 C 50 35, 65 50, 100 50 C 65 50, 50 65, 50 100 C 50 65, 35 50, 0 50 C 35 50, 50 35, 50 0 Z" fill="url(#goldGrad1)" />
+        </svg>
+        <svg class="edge-icon bot-l" width="13" height="13" viewBox="0 0 100 100" style="transform: rotate(-20deg); filter: drop-shadow(0 2px 5px rgba(255, 215, 0, 0.6));">
+          <path d="M 50 0 C 50 35, 65 50, 100 50 C 65 50, 50 65, 50 100 C 50 65, 35 50, 0 50 C 35 50, 50 35, 50 0 Z" fill="url(#goldGrad1)" />
+        </svg>
+
+        <div class="neon e-luxe">
+          <div class="neon-inner">
+            <div class="sweep"></div>
+            <span class="spark" style="top:20%; left:8%; animation-delay:1s">✦</span>
+            <p class="msg"><span class="msg-text">Golden Luxe elegance... pure perfection & love. </span><span class="msg-emoji">👑✨</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

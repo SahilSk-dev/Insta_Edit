@@ -1,10 +1,10 @@
 import React from 'react';
 import {
   BackIcon,
-  VideoCallIcon,
-  PhoneCallIcon,
-  InfoIcon,
-  ChevronRightIcon
+  InstagramBlendIcon,
+  InstagramVideoCallIcon,
+  InstagramTagIcon,
+  InstagramReelEngineIcon
 } from './InstagramIcons';
 import { getAvatarUrl } from '../data/initialData';
 
@@ -16,9 +16,11 @@ interface ChatTopBarProps {
   onProfileClick: () => void;
   onChangeAvatar: () => void;
   onVideoCallClick: () => void;
-  onTagCaptureScreenshot: () => void;
+  onTagClick: () => void;
   onOpenBackend: () => void;
   onClearChatClick: () => void;
+  onOpenEmojiFontSelect?: () => void;
+  activeEmojiFont?: string;
 }
 
 export const ChatTopBar: React.FC<ChatTopBarProps> = ({
@@ -29,9 +31,11 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
   onProfileClick,
   onChangeAvatar,
   onVideoCallClick,
-  onTagCaptureScreenshot,
+  onTagClick,
   onOpenBackend,
-  onClearChatClick
+  onClearChatClick,
+  onOpenEmojiFontSelect,
+  activeEmojiFont
 }) => {
   const avatarUrl = getAvatarUrl(avatarName);
 
@@ -49,10 +53,11 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
         display: 'flex',
         alignItems: 'center',
         paddingLeft: 8,
-        paddingRight: 8,
+        paddingRight: 12,
         justifyContent: 'space-between',
         userSelect: 'none',
-        boxSizing: 'content-box'
+        boxSizing: 'border-box',
+        overflow: 'hidden'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
@@ -107,9 +112,13 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
             }}
           >
             <img
+              key={avatarUrl}
               src={avatarUrl}
               alt={name}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/avatars/sahil_avatar.jpg';
+              }}
             />
           </div>
 
@@ -117,28 +126,25 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
             <div
               style={{
                 color: '#FFFFFF',
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: 700,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                lineHeight: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4
+                lineHeight: '19px'
               }}
             >
-              <span>{name}</span>
-              <ChevronRightIcon size={14} color="#A8A8A8" />
+              {name}
             </div>
             <div
               style={{
-                color: '#A8A8A8',
+                color: '#8E8E8E',
                 fontSize: 12,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                lineHeight: '14px'
+                lineHeight: '14px',
+                marginTop: 1
               }}
             >
               {handle}
@@ -147,70 +153,70 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
         </div>
       </div>
 
-      {/* Action buttons on the right - Exact Android Native Instagram DM Icons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        {/* Phone / Audio call button */}
+      {/* Action buttons on the right - Exact Authentic Instagram DM Icons (Blend, Video Call, Tag) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
+        {/* 1. Blend / Dual icon -> Opens backend editor / settings */}
         <button
-          onClick={onVideoCallClick}
-          title="Audio Call"
+          onClick={onOpenBackend}
+          title="Direct settings & Editor"
           style={{
             background: 'none',
             border: 'none',
+            outline: 'none',
             color: '#FFFFFF',
             cursor: 'pointer',
-            width: 38,
-            height: 38,
+            padding: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: '50%'
+            WebkitTapHighlightColor: 'transparent'
           }}
         >
-          <PhoneCallIcon size={23} />
+          <InstagramBlendIcon size={25} />
         </button>
 
-        {/* Video Call button */}
+        {/* 2. Video Call button */}
         <button
           onClick={onVideoCallClick}
           title="Video Call"
           style={{
             background: 'none',
             border: 'none',
+            outline: 'none',
             color: '#FFFFFF',
             cursor: 'pointer',
-            width: 38,
-            height: 38,
+            padding: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: '50%'
+            WebkitTapHighlightColor: 'transparent'
           }}
         >
-          <VideoCallIcon size={25} />
+          <InstagramVideoCallIcon size={25} />
         </button>
 
-        {/* Info (i) / Details button -> Opens backend editor / details */}
+        {/* 3. Tag / Label button -> Toggles between Screenshot & Video Record */}
         <button
-          onClick={onOpenBackend}
+          onClick={onTagClick}
           onContextMenu={(e) => {
             e.preventDefault();
-            onTagCaptureScreenshot();
+            onOpenBackend();
           }}
-          title="Chat details & Editor (Right-click or Long-press for Screenshot)"
+          title="Screenshot / Video Record Toggle"
           style={{
             background: 'none',
             border: 'none',
+            outline: 'none',
             color: '#FFFFFF',
             cursor: 'pointer',
-            width: 38,
-            height: 38,
+            padding: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: '50%'
+            WebkitTapHighlightColor: 'transparent'
           }}
         >
-          <InfoIcon size={24} />
+          <InstagramTagIcon size={23} />
         </button>
       </div>
     </header>

@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Voice Waveform 4K 60FPS (Transparent Asset)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: background 0.3s ease;
+    }
+
+    /* Background Modes: Pure Green Screen #00FF00 by default */
+    body.mode-greenscreen {
+      background: #00FF00;
+    }
+
+    body.mode-transparent {
+      background-color: #121212;
+      background-image: 
+        linear-gradient(45deg, #1c1c1c 25%, transparent 25%),
+        linear-gradient(-45deg, #1c1c1c 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1c1c1c 75%),
+        linear-gradient(-45deg, transparent 75%, #1c1c1c 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+    }
+
+    body.mode-black {
+      background: #000000;
+    }
+
+    body.mode-bluescreen {
+      background: #0000FF;
+    }
+
+    /* Canvas Stage Container */
+    #stage-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    #waveformCanvas {
+      max-width: 95vw;
+      max-height: 85vh;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.4));
+      image-rendering: auto;
+    }
+
+    /* Floating Control Bar */
+    #toolbar {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(22, 22, 24, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 40px;
+      padding: 10px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      color: #FFFFFF;
+      font-size: 13px;
+    }
+
+    #toolbar.hidden {
+      transform: translateX(-50%) translateY(-120%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .divider {
+      width: 1px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #FFFFFF;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.22);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0095F6 0%, #0077E6 100%);
+      border: none;
+      box-shadow: 0 2px 10px rgba(0, 149, 246, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #18A2FE 0%, #0082FB 100%);
+      box-shadow: 0 4px 16px rgba(0, 149, 246, 0.6);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ED4956 0%, #D62232 100%);
+      border: none;
+    }
+
+    select, input[type="color"] {
+      background: #1C1C1E;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+      padding: 6px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Bottom Scrubber & Info Bar */
+    #bottomBar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(22, 22, 24, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 30px;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      color: #A8A8A8;
+      font-size: 12.5px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      width: min(720px, 92vw);
+    }
+
+    #bottomBar.hidden {
+      transform: translateX(-50%) translateY(140%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #scrubber {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    #scrubber::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0095F6;
+      box-shadow: 0 0 8px rgba(0, 149, 246, 0.8);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    #scrubber::-webkit-slider-thumb:hover {
+      transform: scale(1.3);
+    }
+
+    /* Unhide floating hint button */
+    #toggleControlsBtn {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #A8A8A8;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 101;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    #toggleControlsBtn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #FFFFFF;
+      transform: scale(1.1);
+    }
+
+    /* Modal / Toast notification */
+    #toast {
+      position: fixed;
+      bottom: 84px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30, 30, 30, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 200;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-5px);
+    }
+
+    /* Progress Overlay during high-speed video recording */
+    #renderOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      color: #FFFFFF;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #0095F6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="mode-greenscreen">
+
+  <!-- Unhide / Hide toggle button -->
+  <button id="toggleControlsBtn" title="Toggle Controls (Press 'H')">👁️</button>
+
+  <!-- Top Floating Toolbar -->
+  <div id="toolbar">
+    <!-- Playback status -->
+    <div class="tool-group">
+      <button id="playBtn" class="btn btn-primary" title="Play / Pause (Spacebar)">
+        <span id="playIcon">⏸️</span>
+        <span id="playText">Pause</span>
+      </button>
+      <button id="restartBtn" class="btn" title="Replay from start (R)">
+        🔄 Replay
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Voice Pattern Selector -->
+    <div class="tool-group">
+      <label for="patternSelect" style="color:#A8A8A8; font-size:12px;">Voice Pattern:</label>
+      <select id="patternSelect">
+        <option value="user_voice" selected>My Voice Recording (আমার আসল ভয়েস)</option>
+        <option value="natural">Studio Natural Speech (ন্যাচারাল ক্যাডেন্স)</option>
+        <option value="casual">Casual Voice (ছোট কথা)</option>
+        <option value="flat_original">Continuous / Dense (আগের ইমেজ)</option>
+      </select>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Resolution Selector -->
+    <div class="tool-group">
+      <label for="resSelect" style="color:#A8A8A8; font-size:12px;">Resolution:</label>
+      <select id="resSelect">
+        <option value="4k_uhd" selected>4K UHD (3840 × 2160)</option>
+        <option value="4k_strip">4K Strip (3840 × 960)</option>
+        <option value="4k_wide">4K UltraWide (3840 × 1080)</option>
+        <option value="1080p">Full HD (1920 × 1080)</option>
+        <option value="compact">Tight Crop (1920 × 480)</option>
+      </select>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Played Color Selector -->
+    <div class="tool-group">
+      <label for="greyColorSelect" style="color:#A8A8A8; font-size:12px;">Played Grey:</label>
+      <select id="greyColorSelect">
+        <option value="#707070" selected>Instagram Grey (#707070)</option>
+        <option value="#555555">Dark Grey (#555555)</option>
+        <option value="#8E8E93">Soft Grey (#8E8E93)</option>
+        <option value="custom">Custom Color...</option>
+      </select>
+      <input type="color" id="customColorPicker" value="#707070" style="display:none; width:30px; height:30px; padding:0; border-radius:50%;" />
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Background Mode: Pure Green Screen #00FF00 by default -->
+    <div class="tool-group">
+      <label for="bgModeSelect" style="color:#A8A8A8; font-size:12px;">Background:</label>
+      <select id="bgModeSelect">
+        <option value="greenscreen" selected>Pure Green Screen (#00FF00)</option>
+        <option value="transparent">Transparent (Alpha)</option>
+        <option value="black">Pitch Black (#000000)</option>
+        <option value="bluescreen">Blue Screen (#0000FF)</option>
+      </select>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Exporters -->
+    <div class="tool-group">
+      <button id="exportWebmBtn" class="btn btn-primary" title="Export 4K 60FPS Video with Transparent Alpha (WebM VP9)">
+        🎬 Export 4K 60FPS Video (.webm)
+      </button>
+      <button id="exportZipBtn" class="btn" title="Export 180 lossless 4K PNG frames (ZIP)">
+        📦 4K PNG Frames (.zip)
+      </button>
+      <button id="snapPngBtn" class="btn" title="Download current frame as 4K PNG">
+        📸 4K PNG
+      </button>
+    </div>
+  </div>
+
+  <!-- Stage Container for 4K Canvas -->
+  <div id="stage-container" title="Click anywhere to Play / Replay">
+    <canvas id="waveformCanvas" width="3840" height="2160"></canvas>
+  </div>
+
+  <!-- Bottom Scrubber & Time Display -->
+  <div id="bottomBar">
+    <span id="timeDisplay" style="color:#FFFFFF; font-weight:700; min-width: 65px; font-variant-numeric: tabular-nums;">
+      0.00s
+    </span>
+    <input type="range" id="scrubber" min="0" max="3000" step="1" value="0">
+    <span style="color:#8E8E93; font-variant-numeric: tabular-nums;">3.00s</span>
+
+    <div class="divider"></div>
+
+    <span id="frameDisplay" style="color:#0095F6; font-weight:600; min-width: 90px; font-variant-numeric: tabular-nums;">
+      Frame 0 / 180
+    </span>
+
+    <div class="divider"></div>
+
+    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#FFFFFF;">
+      <input type="checkbox" id="autoLoopCheck" checked style="accent-color:#0095F6; cursor:pointer;" />
+      Auto Loop
+    </label>
+  </div>
+
+  <!-- Floating Toast -->
+  <div id="toast">Ready</div>
+
+  <!-- High-Speed Render Progress Overlay -->
+  <div id="renderOverlay">
+    <div class="spinner"></div>
+    <div id="renderProgressText" style="font-size:18px; font-weight:700;">Rendering 4K 60FPS Frames...</div>
+    <div id="renderSubText" style="font-size:13px; color:#A8A8A8;">Frame 0 / 180 (0%)</div>
+  </div>
+
+  <script>
+    /**
+     * Waveform Presets (29 bars each):
+     * 'user_voice': EXACT 29 bars from user's voice recording in media_1790631482908.png (DEFAULT)
+     * 'natural': Studio human voice with dynamic syllable cadence and breath pauses
+     * 'casual': Shorter casual phrase with softer dynamics
+     * 'flat_original': The continuous flat waveform from previous image
+     */
+    const WAVEFORM_PRESETS = {
+      'user_voice': {
+        name: 'My Voice Recording (আমার আসল ভয়েস)',
+        bars: [12, 18, 56, 83, 93, 178, 181, 181, 181, 181, 183, 169, 178, 184, 148, 181, 145, 142, 178, 104, 181, 174, 181, 172, 116, 154, 151, 169, 169]
+      },
+      'natural': {
+        name: 'Studio Natural Speech (ন্যাচারাল ক্যাডেন্স)',
+        bars: [14, 14, 38, 78, 122, 88, 42, 18, 14, 46, 98, 148, 172, 138, 92, 118, 158, 112, 58, 22, 14, 42, 98, 132, 152, 108, 62, 26, 14]
+      },
+      'casual': {
+        name: 'Casual Voice (ছোট কথা)',
+        bars: [14, 14, 28, 64, 108, 144, 98, 42, 16, 14, 34, 76, 128, 160, 114, 52, 18, 14, 14, 28, 70, 118, 140, 96, 50, 24, 14, 14, 14]
+      },
+      'flat_original': {
+        name: 'Continuous / Dense (আগের ইমেজ)',
+        bars: [14, 14, 81, 103, 104, 99, 113, 104, 107, 114, 93, 107, 108, 107, 104, 105, 119, 97, 105, 100, 117, 107, 105, 97, 119, 109, 163, 110, 184]
+      }
+    };
+
+    let activePresetKey = 'user_voice';
+    let RAW_BAR_HEIGHTS = WAVEFORM_PRESETS[activePresetKey].bars;
+    const MAX_RAW_HEIGHT = 184;
+
+    const DURATION_MS = 3000; // Exactly 3.0 seconds
+    const FPS = 60;
+    const TOTAL_FRAMES = 180; // 60 * 3 = 180 frames
+
+    // Color definitions
+    const COLOR_UNPLAYED = '#FFFFFF'; // Pure solid white
+    let COLOR_PLAYED = '#707070';     // Instagram audio played grey
+
+    // Resolutions configuration
+    const RESOLUTIONS = {
+      '4k_uhd':   { w: 3840, h: 2160, scale: 3.6 },
+      '4k_strip': { w: 3840, h: 960,  scale: 4.0 },
+      '4k_wide':  { w: 3840, h: 1080, scale: 3.8 },
+      '1080p':    { w: 1920, h: 1080, scale: 1.8 },
+      'compact':  { w: 1920, h: 480,  scale: 2.0 }
+    };
+
+    let currentResKey = '4k_uhd';
+
+    // Canvas elements
+    const canvas = document.getElementById('waveformCanvas');
+    const ctx = canvas.getContext('2d', { alpha: true });
+
+    // UI elements
+    const toolbar = document.getElementById('toolbar');
+    const bottomBar = document.getElementById('bottomBar');
+    const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const playText = document.getElementById('playText');
+    const restartBtn = document.getElementById('restartBtn');
+    const scrubber = document.getElementById('scrubber');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const frameDisplay = document.getElementById('frameDisplay');
+    const autoLoopCheck = document.getElementById('autoLoopCheck');
+    const resSelect = document.getElementById('resSelect');
+    const greyColorSelect = document.getElementById('greyColorSelect');
+    const customColorPicker = document.getElementById('customColorPicker');
+    const bgModeSelect = document.getElementById('bgModeSelect');
+    const exportWebmBtn = document.getElementById('exportWebmBtn');
+    const exportZipBtn = document.getElementById('exportZipBtn');
+    const snapPngBtn = document.getElementById('snapPngBtn');
+    const stageContainer = document.getElementById('stage-container');
+    const toast = document.getElementById('toast');
+    const renderOverlay = document.getElementById('renderOverlay');
+    const renderProgressText = document.getElementById('renderProgressText');
+    const renderSubText = document.getElementById('renderSubText');
+
+    // Playback state
+    let isPlaying = true;
+    let currentTimeMs = 0;
+    let lastTimestamp = performance.now();
+    let loopPauseTimer = 0;
+    let isExporting = false;
+    let currentBgMode = 'greenscreen'; // Default: Pure Green Screen (#00FF00)
+
+    // Toast helper
+    let toastTimeout;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    // Set canvas dimensions based on chosen preset
+    function applyResolution(key) {
+      currentResKey = key;
+      const res = RESOLUTIONS[key];
+      canvas.width = res.w;
+      canvas.height = res.h;
+      drawWaveform(currentTimeMs);
+    }
+
+    /**
+     * Renders the waveform at an exact timestamp (0.0 to 3000.0 ms)
+     * Pure green screen (#00FF00) by default, or transparent/black/blue.
+     * Turns from White to Grey as time advances!
+     */
+    function drawWaveform(timeMs) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const res = RESOLUTIONS[currentResKey];
+      const scale = res.scale;
+
+      // 1. BACKGROUND (Pure Green Screen #00FF00 by default)
+      if (currentBgMode === 'greenscreen') {
+        ctx.fillStyle = '#00FF00';
+        ctx.fillRect(0, 0, w, h);
+      } else if (currentBgMode === 'black') {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+      } else if (currentBgMode === 'bluescreen') {
+        ctx.fillStyle = '#0000FF';
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        // Transparent alpha
+        ctx.clearRect(0, 0, w, h);
+      }
+
+      // Geometry calculation: exact pitch and width from original asset
+      const barW = Math.round(12 * scale);
+      const pitch = Math.round(24 * scale);
+      const totalWaveformW = (RAW_BAR_HEIGHTS.length - 1) * pitch + barW;
+
+      const startX = Math.round((w - totalWaveformW) / 2);
+      const centerY = Math.round(h / 2);
+
+      // Progress: 0.0 to 1.0 over 3.0 seconds
+      const progress = Math.min(Math.max(timeMs / DURATION_MS, 0), 1);
+
+      // Calculate playhead sweep X coordinate (from left edge of bar 0 to right edge of bar 28)
+      const playheadX = startX + progress * totalWaveformW;
+
+      // Helper to trace all 29 pill bars
+      function traceBarsPath() {
+        ctx.beginPath();
+        for (let i = 0; i < RAW_BAR_HEIGHTS.length; i++) {
+          const bh = Math.round(RAW_BAR_HEIGHTS[i] * scale);
+          const bx = startX + i * pitch;
+          const by = Math.round(centerY - bh / 2);
+          const r = barW / 2;
+
+          // RoundRect pill bar
+          if (ctx.roundRect) {
+            ctx.roundRect(bx, by, barW, bh, r);
+          } else {
+            // Polyfill fallback
+            ctx.moveTo(bx + r, by);
+            ctx.lineTo(bx + barW - r, by);
+            ctx.arc(bx + barW - r, by + r, r, -Math.PI / 2, Math.PI / 2);
+            ctx.lineTo(bx + r, by + bh);
+            ctx.arc(bx + r, by + bh - r, r, Math.PI / 2, (3 * Math.PI) / 2);
+            ctx.closePath();
+          }
+        }
+      }
+
+      // PASS 1: Base layer - Draw ALL bars in unplayed GREY (#707070)
+      ctx.save();
+      traceBarsPath();
+      ctx.fillStyle = COLOR_PLAYED;
+      ctx.fill();
+      ctx.restore();
+
+      // PASS 2: Played layer - Draw bars to the left of playhead in WHITE (#FFFFFF) (grey-er opor sada)
+      if (progress > 0) {
+        ctx.save();
+        // Clip to the played progress region [0, 0, playheadX, h]
+        ctx.beginPath();
+        ctx.rect(0, 0, playheadX, h);
+        ctx.clip();
+
+        // Fill with active played WHITE color
+        traceBarsPath();
+        ctx.fillStyle = COLOR_UNPLAYED;
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    // Main 60 FPS animation loop
+    function animate(now) {
+      if (!isExporting) {
+        if (isPlaying) {
+          const delta = now - lastTimestamp;
+          currentTimeMs += delta;
+
+          if (currentTimeMs >= DURATION_MS) {
+            currentTimeMs = DURATION_MS;
+            if (autoLoopCheck.checked) {
+              // Pause 0.8s on completion, then restart
+              loopPauseTimer += delta;
+              if (loopPauseTimer >= 800) {
+                currentTimeMs = 0;
+                loopPauseTimer = 0;
+              }
+            } else {
+              pause();
+            }
+          } else {
+            loopPauseTimer = 0;
+          }
+
+          updateUI();
+          drawWaveform(currentTimeMs);
+        }
+        lastTimestamp = now;
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function updateUI() {
+      scrubber.value = Math.min(Math.round(currentTimeMs), DURATION_MS);
+      const sec = (currentTimeMs / 1000).toFixed(2);
+      timeDisplay.textContent = `${sec}s`;
+      const curFrame = Math.min(Math.round((currentTimeMs / DURATION_MS) * TOTAL_FRAMES), TOTAL_FRAMES);
+      frameDisplay.textContent = `Frame ${curFrame} / ${TOTAL_FRAMES}`;
+    }
+
+    function play() {
+      isPlaying = true;
+      playIcon.textContent = '⏸️';
+      playText.textContent = 'Pause';
+      lastTimestamp = performance.now();
+    }
+
+    function pause() {
+      isPlaying = false;
+      playIcon.textContent = '▶️';
+      playText.textContent = 'Play';
+    }
+
+    function restart() {
+      currentTimeMs = 0;
+      loopPauseTimer = 0;
+      updateUI();
+      drawWaveform(0);
+      play();
+    }
+
+    // Play/Pause button
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isPlaying) pause();
+      else play();
+    });
+
+    // Replay button
+    restartBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      restart();
+    });
+
+    // Scrubber input
+    scrubber.addEventListener('input', (e) => {
+      currentTimeMs = parseFloat(e.target.value);
+      loopPauseTimer = 0;
+      updateUI();
+      drawWaveform(currentTimeMs);
+    });
+
+    scrubber.addEventListener('mousedown', () => pause());
+
+    // Voice Pattern preset change
+    const patternSelect = document.getElementById('patternSelect');
+    patternSelect.addEventListener('change', (e) => {
+      activePresetKey = e.target.value;
+      RAW_BAR_HEIGHTS = WAVEFORM_PRESETS[activePresetKey].bars;
+      drawWaveform(currentTimeMs);
+      showToast(`Pattern: ${WAVEFORM_PRESETS[activePresetKey].name}`);
+    });
+
+    // Resolution change
+    resSelect.addEventListener('change', (e) => {
+      applyResolution(e.target.value);
+      showToast(`Resolution updated: ${e.target.options[e.target.selectedIndex].text}`);
+    });
+
+    // Played grey color change
+    greyColorSelect.addEventListener('change', (e) => {
+      if (e.target.value === 'custom') {
+        customColorPicker.style.display = 'inline-block';
+        customColorPicker.click();
+      } else {
+        customColorPicker.style.display = 'none';
+        COLOR_PLAYED = e.target.value;
+        drawWaveform(currentTimeMs);
+        showToast(`Played grey set to ${COLOR_PLAYED}`);
+      }
+    });
+
+    customColorPicker.addEventListener('input', (e) => {
+      COLOR_PLAYED = e.target.value;
+      drawWaveform(currentTimeMs);
+    });
+
+    // Background mode change
+    bgModeSelect.addEventListener('change', (e) => {
+      currentBgMode = e.target.value;
+      document.body.className = `mode-${currentBgMode}`;
+      drawWaveform(currentTimeMs);
+      showToast(`Background: ${e.target.options[e.target.selectedIndex].text}`);
+    });
+
+    // Toggle controls visibility
+    let controlsHidden = false;
+    function toggleControls() {
+      controlsHidden = !controlsHidden;
+      toolbar.classList.toggle('hidden', controlsHidden);
+      bottomBar.classList.toggle('hidden', controlsHidden);
+      toggleControlsBtn.textContent = controlsHidden ? '👁️' : '✕';
+      toggleControlsBtn.title = controlsHidden ? 'Show Controls (H)' : 'Hide Controls (H)';
+      if (controlsHidden) {
+        showToast("Controls hidden (Press 'H' or tap top-right to restore)");
+      }
+    }
+
+    toggleControlsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleControls();
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        if (isPlaying) pause(); else play();
+      } else if (e.key === 'r' || e.key === 'R') {
+        restart();
+      } else if (e.key === 'h' || e.key === 'H') {
+        toggleControls();
+      }
+    });
+
+    // Clicking stage toggles play / restart
+    stageContainer.addEventListener('click', () => {
+      if (currentTimeMs >= DURATION_MS) {
+        restart();
+      } else {
+        if (isPlaying) pause(); else play();
+      }
+    });
+
+    // =========================================================================
+    // 4K 60FPS Video Export Engine (Transparent Alpha WebM VP9)
+    // =========================================================================
+    exportWebmBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (isExporting) return;
+
+      pause();
+      isExporting = true;
+      renderOverlay.style.display = 'flex';
+      renderProgressText.textContent = 'Recording 4K 60FPS Transparent WebM...';
+
+      try {
+        const stream = canvas.captureStream(60);
+        let mimeType = 'video/webm;codecs=vp9';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'video/webm';
+        }
+
+        const recorder = new MediaRecorder(stream, {
+          mimeType,
+          videoBitsPerSecond: 60000000 // 60 Mbps crystal clear 4K
+        });
+
+        const chunks = [];
+        recorder.ondataavailable = (ev) => {
+          if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+        };
+
+        const finishedPromise = new Promise((resolve) => {
+          recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `instagram_waveform_4k_60fps_${currentResKey}_transparent.webm`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+            resolve();
+          };
+        });
+
+        recorder.start();
+
+        // Render exactly 180 frames at 60 FPS
+        for (let frame = 0; frame <= TOTAL_FRAMES; frame++) {
+          const t = (frame / TOTAL_FRAMES) * DURATION_MS;
+          drawWaveform(t);
+          renderSubText.textContent = `Frame ${frame} / ${TOTAL_FRAMES} (${Math.round((frame / TOTAL_FRAMES) * 100)}%)`;
+          // Wait 1 frame interval (16.6ms) for MediaRecorder stream capture
+          await new Promise((r) => setTimeout(r, 16.66));
+        }
+
+        recorder.stop();
+        await finishedPromise;
+
+        showToast('4K 60FPS Transparent Video Downloaded!');
+      } catch (err) {
+        console.error('Export error:', err);
+        showToast('Export error: ' + err.message);
+      } finally {
+        isExporting = false;
+        renderOverlay.style.display = 'none';
+        currentTimeMs = 0;
+        updateUI();
+        drawWaveform(0);
+      }
+    });
+
+    // =========================================================================
+    // 4K PNG Sequence ZIP Exporter (Zero Dependencies Pure JS ZIP Writer)
+    // =========================================================================
+    const crc32Table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      crc32Table[i] = c;
+    }
+    function crc32(buf) {
+      let crc = 0xFFFFFFFF;
+      for (let i = 0; i < buf.length; i++) {
+        crc = crc32Table[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+      }
+      return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    function createZip(files) {
+      const localHeaders = [];
+      const centralHeaders = [];
+      let offset = 0;
+
+      for (const file of files) {
+        const nameBytes = new TextEncoder().encode(file.name);
+        const data = file.data;
+        const crc = crc32(data);
+        const size = data.length;
+
+        // Local header (30 + name)
+        const local = new Uint8Array(30 + nameBytes.length);
+        const lv = new DataView(local.buffer);
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0, true);
+        lv.setUint16(8, 0, true); // Stored (0 compression)
+        lv.setUint16(10, 0, true);
+        lv.setUint16(12, 0, true);
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, size, true);
+        lv.setUint32(22, size, true);
+        lv.setUint16(26, nameBytes.length, true);
+        lv.setUint16(28, 0, true);
+        local.set(nameBytes, 30);
+
+        localHeaders.push({ header: local, data });
+
+        // Central header (46 + name)
+        const central = new Uint8Array(46 + nameBytes.length);
+        const cv = new DataView(central.buffer);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, 0, true);
+        cv.setUint16(14, 0, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, size, true);
+        cv.setUint32(24, size, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, offset, true);
+        central.set(nameBytes, 46);
+
+        centralHeaders.push(central);
+        offset += local.length + data.length;
+      }
+
+      const centralSize = centralHeaders.reduce((sum, h) => sum + h.length, 0);
+      const endRecord = new Uint8Array(22);
+      const ev = new DataView(endRecord.buffer);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(4, 0, true);
+      ev.setUint16(6, 0, true);
+      ev.setUint16(8, files.length, true);
+      ev.setUint16(10, files.length, true);
+      ev.setUint32(12, centralSize, true);
+      ev.setUint32(16, offset, true);
+      ev.setUint16(20, 0, true);
+
+      const parts = [];
+      for (const lh of localHeaders) {
+        parts.push(lh.header);
+        parts.push(lh.data);
+      }
+      for (const ch of centralHeaders) {
+        parts.push(ch);
+      }
+      parts.push(endRecord);
+
+      return new Blob(parts, { type: 'application/zip' });
+    }
+
+    exportZipBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (isExporting) return;
+
+      pause();
+      isExporting = true;
+      renderOverlay.style.display = 'flex';
+      renderProgressText.textContent = 'Rendering 180 Lossless 4K PNG Frames...';
+
+      try {
+        const files = [];
+        for (let frame = 0; frame < TOTAL_FRAMES; frame++) {
+          const t = (frame / (TOTAL_FRAMES - 1)) * DURATION_MS;
+          drawWaveform(t);
+
+          const frameNumStr = String(frame).padStart(3, '0');
+          renderSubText.textContent = `Rendering Frame ${frame + 1} / ${TOTAL_FRAMES} (${Math.round(((frame + 1) / TOTAL_FRAMES) * 100)}%)`;
+
+          const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+          const buffer = await blob.arrayBuffer();
+          files.push({
+            name: `frame_${frameNumStr}.png`,
+            data: new Uint8Array(buffer)
+          });
+
+          // Allow UI update
+          if (frame % 5 === 0) {
+            await new Promise((r) => setTimeout(r, 0));
+          }
+        }
+
+        renderProgressText.textContent = 'Zipping 180 PNG frames...';
+        await new Promise((r) => setTimeout(r, 50));
+
+        const zipBlob = createZip(files);
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `instagram_waveform_4k_60fps_${currentResKey}_frames.zip`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+        showToast('180 4K PNG Frames ZIP Downloaded!');
+      } catch (err) {
+        console.error('ZIP export error:', err);
+        showToast('ZIP error: ' + err.message);
+      } finally {
+        isExporting = false;
+        renderOverlay.style.display = 'none';
+        currentTimeMs = 0;
+        updateUI();
+        drawWaveform(0);
+      }
+    });
+
+    // Download single frame as 4K PNG
+    snapPngBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sec = (currentTimeMs / 1000).toFixed(2);
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `instagram_waveform_4k_${currentResKey}_${sec}s.png`;
+      a.click();
+      showToast(`Saved 4K PNG at ${sec}s!`);
+    });
+
+    // =========================================================================
+    // INITIALIZATION: Auto-play immediately on load
+    // =========================================================================
+    applyResolution('4k_uhd');
+    play();
+    requestAnimationFrame(animate);
+    showToast("Playing 4K 60FPS Waveform Asset (Press 'H' to toggle controls)");
+  </script>
+</body>
+</html>
