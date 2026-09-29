@@ -39,6 +39,7 @@ export interface RenderBubblesOptions {
   emojiFont?: string;
   avatarUrl?: string;
   speedMultiplier?: number;
+  globalBubbleSpacing?: number;
 }
 
 interface ThemeConfig {
@@ -381,8 +382,14 @@ export const calculateBubblesColumnLayout = (
     }
 
     const y = curY;
-    const effectiveBubbleGap = msg.customSpacing !== undefined ? msg.customSpacing * scale : defaultGap;
-    const finalGap = msg.reaction ? Math.max(effectiveBubbleGap, 8 * scale) : effectiveBubbleGap;
+    const isThemed = theme !== 'CLASSIC';
+    // Match real DOM spacing 1:1:
+    // In DOM, effectiveSpacing = msg.customSpacing !== undefined ? msg.customSpacing : globalSpacing (default 4px).
+    // Each DOM message item has top & bottom padding (2px + 2px = 4px, or 3.5px + 3.5px = 7px if themed).
+    const baseSpacing = msg.customSpacing !== undefined ? msg.customSpacing : (options.globalBubbleSpacing ?? 4);
+    const domPaddingOffset = isThemed ? 7 : 4;
+    const effectiveBubbleGap = (baseSpacing + domPaddingOffset) * scale;
+    const finalGap = msg.reaction ? Math.max(effectiveBubbleGap, 12 * scale) : effectiveBubbleGap;
     curY += h + finalGap;
 
     return {

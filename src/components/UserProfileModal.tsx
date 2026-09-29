@@ -10,6 +10,8 @@ interface UserProfileModalProps {
   onSendMessage: () => void;
   onBlockUser: () => void;
   onOpenEmojiFontSelect?: () => void;
+  onOpenSpacingModal?: () => void;
+  globalBubbleSpacing?: number;
   onAvatarUpload?: (newAvatar: string) => void;
 }
 
@@ -19,6 +21,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onSendMessage,
   onBlockUser,
   onOpenEmojiFontSelect,
+  onOpenSpacingModal,
+  globalBubbleSpacing = 4,
   onAvatarUpload
 }) => {
   const [isFollowing, setIsFollowing] = useState(false);
@@ -278,6 +282,38 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
             </div>
             <span style={{ color: '#3897F0', fontSize: 12.5, fontWeight: 600 }}>Change</span>
+          </div>
+        )}
+
+        {/* Chat Bubble Spacing Row */}
+        {onOpenSpacingModal && (
+          <div
+            onClick={() => {
+              onDismiss();
+              onOpenSpacingModal();
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: 10,
+              padding: '10px 14px',
+              backgroundColor: '#1E1E1E',
+              borderRadius: 10,
+              cursor: 'pointer',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 18 }}>↕</span>
+              <div>
+                <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600 }}>Bubble Spacing (গ্যাপ)</div>
+                <div style={{ color: '#8E8E93', fontSize: 11.5 }}>
+                  {globalBubbleSpacing}px vertical gap
+                </div>
+              </div>
+            </div>
+            <span style={{ color: '#3897F0', fontSize: 12.5, fontWeight: 600 }}>Adjust</span>
           </div>
         )}
 

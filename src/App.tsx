@@ -355,7 +355,8 @@ export const App: React.FC = () => {
           scale: 2,
           baseWidth: 420,
           emojiFont: profile.emojiFont || 'SamsungOneUI_4_Xmas',
-          avatarUrl: getAvatarUrl(profile.avatarName)
+          avatarUrl: getAvatarUrl(profile.avatarName),
+          globalBubbleSpacing
         });
         setCapturedScreenshotUrl(dataUrl);
         return;
@@ -412,6 +413,9 @@ export const App: React.FC = () => {
           onResetDefaults={handleResetDefaults}
           onBackToDM={() => setCurrentScreen('DM')}
           onOpenLyricsVideoEngine={() => setShowLyricsVideoEngine(true)}
+          globalBubbleSpacing={globalBubbleSpacing}
+          onUpdateGlobalSpacing={(sp) => setGlobalBubbleSpacing(sp)}
+          onResetAllCustomGaps={handleResetAllCustomGaps}
           onToast={showToast}
         />
       ) : (
@@ -490,15 +494,18 @@ export const App: React.FC = () => {
                 }}
               />
 
-              {/* Centered Conversation Timestamp (100% Authentic Instagram DM) */}
+              {/* Centered Conversation Timestamp (100% Authentic Instagram DM - tap to adjust spacing) */}
               <div
+                onClick={() => setShowSpacingModal(true)}
+                title="Tap to adjust Chat Bubble Spacing (গ্যাপ পরিবর্তন)"
                 style={{
                   width: '100%',
                   textAlign: 'center',
                   padding: '12px 0 10px 0',
                   color: '#8E8E93',
                   fontSize: 12,
-                  userSelect: 'none'
+                  userSelect: 'none',
+                  cursor: 'pointer'
                 }}
               >
                 {profile.chatTimestamp}
@@ -686,6 +693,11 @@ export const App: React.FC = () => {
               setShowProfileSheet(false);
               setShowEmojiFontModal(true);
             }}
+            onOpenSpacingModal={() => {
+              setShowProfileSheet(false);
+              setShowSpacingModal(true);
+            }}
+            globalBubbleSpacing={globalBubbleSpacing}
             onAvatarUpload={(newAvatar) => {
               setProfile((p) => {
                 const updated = { ...p, avatarName: newAvatar };
@@ -727,6 +739,12 @@ export const App: React.FC = () => {
             message={selectedMessageForAction}
             contactName={profile.name}
             globalSpacing={globalBubbleSpacing}
+            onUpdateGlobalSpacing={(sp) => setGlobalBubbleSpacing(sp)}
+            onResetAllCustomGaps={handleResetAllCustomGaps}
+            onOpenSpacingModal={() => {
+              setSelectedMessageForAction(null);
+              setShowSpacingModal(true);
+            }}
             onUpdateSpacingLive={handleUpdateMessageSpacing}
             onEditMessage={(
               id,
@@ -861,6 +879,7 @@ export const App: React.FC = () => {
             currentMessages={messages}
             emojiFont={profile.emojiFont || 'SamsungOneUI_4_Xmas'}
             avatarUrl={getAvatarUrl(profile.avatarName)}
+            globalBubbleSpacing={globalBubbleSpacing}
             onDismiss={() => setShowLyricsVideoEngine(false)}
             onScreenshotCapture={(dataUrl) => {
               setCapturedScreenshotUrl(dataUrl);

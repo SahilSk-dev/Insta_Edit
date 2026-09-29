@@ -41,6 +41,9 @@ interface BackendScreenProps {
   onResetDefaults: () => void;
   onBackToDM: () => void;
   onOpenLyricsVideoEngine?: () => void;
+  globalBubbleSpacing?: number;
+  onUpdateGlobalSpacing?: (spacing: number) => void;
+  onResetAllCustomGaps?: () => void;
   onToast: (msg: string) => void;
 }
 
@@ -55,6 +58,9 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
   onResetDefaults,
   onBackToDM,
   onOpenLyricsVideoEngine,
+  globalBubbleSpacing = 4,
+  onUpdateGlobalSpacing,
+  onResetAllCustomGaps,
   onToast
 }) => {
   const [selectedTab, setSelectedTab] = useState<0 | 1>(0); // 0: Profile, 1: Messages
@@ -636,6 +642,104 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
               >
                 🥹 🫰 ❤️‍🔥 🥀 🦋 ✨ 🥰 🔥 💀 🎉
               </div>
+            </div>
+
+            {/* Chat Bubble Spacing (গ্যাপ সেটিংস) */}
+            <div
+              style={{
+                backgroundColor: '#161616',
+                borderRadius: 12,
+                padding: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                marginBottom: 24
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <label style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>↕ Chat Bubble Spacing (চ্যাট গ্যাপ)</span>
+                </label>
+                <span
+                  style={{
+                    backgroundColor: '#0095F6',
+                    color: '#FFFFFF',
+                    borderRadius: 12,
+                    padding: '2px 10px',
+                    fontSize: 12.5,
+                    fontWeight: 700
+                  }}
+                >
+                  {globalBubbleSpacing}px
+                </span>
+              </div>
+              <div style={{ color: '#8E8E93', fontSize: 12, marginBottom: 12 }}>
+                Adjust the vertical distance between all chat bubbles simultaneously.
+              </div>
+
+              {/* Slider */}
+              <input
+                type="range"
+                min={0}
+                max={40}
+                step={1}
+                value={globalBubbleSpacing}
+                onChange={(e) => onUpdateGlobalSpacing?.(Number(e.target.value))}
+                onInput={(e) => onUpdateGlobalSpacing?.(Number((e.target as HTMLInputElement).value))}
+                style={{ width: '100%', height: 6, accentColor: '#0095F6', cursor: 'pointer', marginBottom: 14 }}
+              />
+
+              {/* Presets */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                {[
+                  { label: '0px (Attached)', val: 0 },
+                  { label: '4px (Default)', val: 4 },
+                  { label: '10px (Relaxed)', val: 10 },
+                  { label: '18px (Lyrics)', val: 18 },
+                  { label: '28px (Reel)', val: 28 }
+                ].map((p) => {
+                  const isSelected = globalBubbleSpacing === p.val;
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => onUpdateGlobalSpacing?.(p.val)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 4px',
+                        borderRadius: 6,
+                        backgroundColor: isSelected ? '#0095F6' : '#222222',
+                        color: isSelected ? '#FFFFFF' : '#A8A8A8',
+                        border: isSelected ? '1px solid #38BDF8' : '1px solid #333333',
+                        fontSize: 11,
+                        fontWeight: isSelected ? 700 : 500,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Reset All Custom Gaps */}
+              {onResetAllCustomGaps && (
+                <button
+                  type="button"
+                  onClick={onResetAllCustomGaps}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#222222',
+                    border: '1px solid #333333',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    color: '#D4D4D4',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔄 Reset All Custom Gaps to {globalBubbleSpacing}px
+                </button>
+              )}
             </div>
 
             {/* Switches: Auto Reply & Block */}

@@ -15,6 +15,7 @@ interface LyricsVideoEngineModalProps {
   currentMessages: ChatMessage[];
   emojiFont?: string;
   avatarUrl?: string;
+  globalBubbleSpacing?: number;
   onDismiss: () => void;
   onScreenshotCapture?: (dataUrl: string) => void;
 }
@@ -42,6 +43,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
   currentMessages,
   emojiFont = 'SamsungOneUI_4_Xmas',
   avatarUrl,
+  globalBubbleSpacing = 4,
   onDismiss,
   onScreenshotCapture
 }) => {
@@ -93,7 +95,8 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     baseWidth: 432,
     emojiFont,
     avatarUrl,
-    speedMultiplier
+    speedMultiplier,
+    globalBubbleSpacing
   };
 
   // Re-calculate layout only when messages or render options change (NEVER inside loop!)
@@ -103,7 +106,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     cachedLayoutRef.current = calculateBubblesColumnLayout(ctx, messagesToRecord, renderOptions);
-  }, [messagesToRecord, quality, emojiFont, speedOption, avatarUrl]);
+  }, [messagesToRecord, quality, emojiFont, speedOption, avatarUrl, globalBubbleSpacing]);
 
   // Preload avatar photo and message photos into memory & DOM cache immediately
   useEffect(() => {

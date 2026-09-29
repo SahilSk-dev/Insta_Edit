@@ -26,6 +26,9 @@ interface MessageActionModalProps {
     audioDuration?: string
   ) => void;
   onUpdateSpacingLive?: (messageId: string, customSpacing?: number) => void;
+  onUpdateGlobalSpacing?: (spacing: number) => void;
+  onResetAllCustomGaps?: () => void;
+  onOpenSpacingModal?: () => void;
   onDeleteMessage: (id: string) => void;
   onReactEmoji: (emoji: string) => void;
   onDismiss: () => void;
@@ -35,6 +38,9 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   message,
   contactName = 'Sahil',
   globalSpacing = 4,
+  onUpdateGlobalSpacing,
+  onResetAllCustomGaps,
+  onOpenSpacingModal,
   onEditMessage,
   onUpdateSpacingLive,
   onDeleteMessage,
@@ -911,101 +917,245 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               </>
             )}
 
-            {/* Individual Bubble Spacing Below (This specific message) */}
+            {/* Unified Chat Spacing Control: Global DM Gap + Individual Bubble Gap */}
             <div
               style={{
-                backgroundColor: '#1E1E1E',
+                backgroundColor: '#1C1C1E',
                 borderRadius: 14,
-                padding: '12px 14px',
+                padding: '14px 16px',
                 marginBottom: 16,
-                border: '1px solid rgba(255, 255, 255, 0.08)'
+                border: '1px solid rgba(255, 255, 255, 0.1)'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>↕ Gap Below Bubble:</span>
-                  <span style={{ color: '#0095F6', fontWeight: 700 }}>
-                    {useCustomSpacing ? `${bubbleSpacing}px (Custom)` : `${globalSpacing ?? 4}px (Global Default)`}
-                  </span>
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <span style={{ color: '#FFFFFF', fontSize: 13.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>↕ Chat Bubble Gap (গ্যাপ সেটিংস)</span>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (useCustomSpacing) {
-                      setUseCustomSpacing(false);
-                      setBubbleSpacing(globalSpacing ?? 4);
-                      onUpdateSpacingLive?.(message.id, undefined);
-                    } else {
-                      setUseCustomSpacing(true);
-                      onUpdateSpacingLive?.(message.id, bubbleSpacing);
-                    }
-                  }}
-                  style={{
-                    padding: '3px 9px',
-                    borderRadius: 6,
-                    backgroundColor: useCustomSpacing ? '#262626' : '#0095F6',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {useCustomSpacing ? 'Reset to Global' : 'Set Custom'}
-                </button>
+                {onOpenSpacingModal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onDismiss();
+                      onOpenSpacingModal();
+                    }}
+                    style={{
+                      background: 'rgba(0, 149, 246, 0.15)',
+                      border: '1px solid #0095F6',
+                      borderRadius: 6,
+                      color: '#38BDF8',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '3px 8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    All Presets 📐
+                  </button>
+                )}
               </div>
 
-              {useCustomSpacing && (
-                <>
-                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-                    {[
-                      { label: '0px (Attached)', val: 0 },
-                      { label: '4px (Normal)', val: 4 },
-                      { label: '12px (Medium)', val: 12 },
-                      { label: '24px (Large)', val: 24 }
-                    ].map((sp) => (
+              {/* 1. GLOBAL GAP CONTROLLER (All Bubbles) */}
+              <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.07)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ color: '#D4D4D4', fontSize: 12.5, fontWeight: 600 }}>
+                    🌐 All Bubbles Gap (সব মেসেজের গ্যাপ):
+                  </span>
+                  <span
+                    style={{
+                      backgroundColor: '#0095F6',
+                      color: '#FFFFFF',
+                      borderRadius: 10,
+                      padding: '1px 8px',
+                      fontSize: 11.5,
+                      fontWeight: 700
+                    }}
+                  >
+                    {globalSpacing ?? 4}px
+                  </span>
+                </div>
+
+                {/* Global Presets */}
+                <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
+                  {[
+                    { label: '0px', val: 0 },
+                    { label: '4px (Default)', val: 4 },
+                    { label: '10px', val: 10 },
+                    { label: '18px', val: 18 },
+                    { label: '28px', val: 28 }
+                  ].map((preset) => {
+                    const isSelected = (globalSpacing ?? 4) === preset.val;
+                    return (
                       <button
-                        key={sp.label}
+                        key={preset.label}
                         type="button"
                         onClick={() => {
-                          setBubbleSpacing(sp.val);
-                          onUpdateSpacingLive?.(message.id, sp.val);
+                          onUpdateGlobalSpacing?.(preset.val);
                         }}
                         style={{
-                          padding: '5px 4px',
+                          flex: 1,
+                          padding: '5px 2px',
                           borderRadius: 6,
-                          backgroundColor: bubbleSpacing === sp.val ? '#0095F6' : '#262626',
-                          color: bubbleSpacing === sp.val ? '#FFFFFF' : '#A8A8A8',
-                          border: 'none',
+                          backgroundColor: isSelected ? '#0095F6' : '#262626',
+                          color: isSelected ? '#FFFFFF' : '#A8A8A8',
+                          border: isSelected ? '1px solid #38BDF8' : '1px solid #383838',
                           fontSize: 11,
-                          fontWeight: bubbleSpacing === sp.val ? 700 : 500,
+                          fontWeight: isSelected ? 700 : 500,
                           cursor: 'pointer',
-                          flex: 1
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        {sp.label}
+                        {preset.label}
                       </button>
-                    ))}
+                    );
+                  })}
+                </div>
+
+                {/* Global Slider */}
+                <input
+                  type="range"
+                  min={0}
+                  max={40}
+                  step={1}
+                  value={globalSpacing ?? 4}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    onUpdateGlobalSpacing?.(val);
+                  }}
+                  onInput={(e) => {
+                    const val = Number((e.target as HTMLInputElement).value);
+                    onUpdateGlobalSpacing?.(val);
+                  }}
+                  style={{
+                    width: '100%',
+                    height: 6,
+                    accentColor: '#0095F6',
+                    cursor: 'pointer',
+                    touchAction: 'pan-x'
+                  }}
+                />
+              </div>
+
+              {/* 2. INDIVIDUAL BUBBLE GAP (This message only) */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ color: '#D4D4D4', fontSize: 12, fontWeight: 600 }}>
+                    🎯 This Bubble Only (এই মেসেজের নিচের গ্যাপ):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (useCustomSpacing) {
+                        setUseCustomSpacing(false);
+                        setBubbleSpacing(globalSpacing ?? 4);
+                        onUpdateSpacingLive?.(message.id, undefined);
+                      } else {
+                        setUseCustomSpacing(true);
+                        onUpdateSpacingLive?.(message.id, bubbleSpacing);
+                      }
+                    }}
+                    style={{
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      backgroundColor: useCustomSpacing ? '#262626' : '#0095F6',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {useCustomSpacing ? 'Reset to Global' : 'Custom'}
+                  </button>
+                </div>
+
+                {useCustomSpacing ? (
+                  <>
+                    <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
+                      {[
+                        { label: '0px', val: 0 },
+                        { label: '4px', val: 4 },
+                        { label: '12px', val: 12 },
+                        { label: '24px', val: 24 }
+                      ].map((sp) => (
+                        <button
+                          key={sp.label}
+                          type="button"
+                          onClick={() => {
+                            setBubbleSpacing(sp.val);
+                            onUpdateSpacingLive?.(message.id, sp.val);
+                          }}
+                          style={{
+                            padding: '4px 2px',
+                            borderRadius: 6,
+                            backgroundColor: bubbleSpacing === sp.val ? '#0095F6' : '#262626',
+                            color: bubbleSpacing === sp.val ? '#FFFFFF' : '#A8A8A8',
+                            border: 'none',
+                            fontSize: 11,
+                            fontWeight: bubbleSpacing === sp.val ? 700 : 500,
+                            cursor: 'pointer',
+                            flex: 1
+                          }}
+                        >
+                          {sp.label}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={60}
+                      step={1}
+                      value={bubbleSpacing}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setBubbleSpacing(val);
+                        onUpdateSpacingLive?.(message.id, val);
+                      }}
+                      onInput={(e) => {
+                        const val = Number((e.target as HTMLInputElement).value);
+                        setBubbleSpacing(val);
+                        onUpdateSpacingLive?.(message.id, val);
+                      }}
+                      style={{ width: '100%', height: 6, accentColor: '#0095F6', cursor: 'pointer', touchAction: 'pan-x' }}
+                    />
+                  </>
+                ) : (
+                  <div style={{ color: '#8E8E93', fontSize: 11.5 }}>
+                    Using global spacing ({globalSpacing ?? 4}px). Tap "Custom" above to set a separate gap below this message.
                   </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={60}
-                    step={1}
-                    value={bubbleSpacing}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setBubbleSpacing(val);
-                      onUpdateSpacingLive?.(message.id, val);
+                )}
+              </div>
+
+              {/* Reset All Custom Gaps (Unify) */}
+              {onResetAllCustomGaps && (
+                <div style={{ marginTop: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onResetAllCustomGaps();
+                      setUseCustomSpacing(false);
+                      setBubbleSpacing(globalSpacing ?? 4);
                     }}
-                    onInput={(e) => {
-                      const val = Number((e.target as HTMLInputElement).value);
-                      setBubbleSpacing(val);
-                      onUpdateSpacingLive?.(message.id, val);
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#262626',
+                      border: '1px solid #383838',
+                      borderRadius: 8,
+                      padding: '7px 10px',
+                      color: '#C7C7CC',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6
                     }}
-                    style={{ width: '100%', height: 8, accentColor: '#0095F6', cursor: 'pointer', touchAction: 'pan-x' }}
-                  />
-                </>
+                  >
+                    <span>🔄 Reset All Custom Gaps to {globalSpacing ?? 4}px</span>
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1413,7 +1563,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               </div>
             </div>
 
-            {/* Individual Bubble Spacing in Edit Mode */}
+            {/* Bubble Spacing in Edit Mode (Global + Custom) */}
             <div
               style={{
                 backgroundColor: '#1E1E1E',
@@ -1424,9 +1574,32 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                 border: '1px solid rgba(255, 255, 255, 0.08)'
               }}
             >
+              {/* Global Spacing */}
+              <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label style={{ color: '#D4D4D4', fontSize: 12, fontWeight: 600 }}>
+                    🌐 All Bubbles Gap (সব মেসেজের গ্যাপ):
+                  </label>
+                  <span style={{ color: '#0095F6', fontSize: 12, fontWeight: 700 }}>
+                    {globalSpacing ?? 4}px
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={40}
+                  step={1}
+                  value={globalSpacing ?? 4}
+                  onChange={(e) => onUpdateGlobalSpacing?.(Number(e.target.value))}
+                  onInput={(e) => onUpdateGlobalSpacing?.(Number((e.target as HTMLInputElement).value))}
+                  style={{ width: '100%', height: 6, accentColor: '#0095F6', cursor: 'pointer', touchAction: 'pan-x' }}
+                />
+              </div>
+
+              {/* Individual Custom Spacing */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <label style={{ color: '#FFFFFF', fontSize: 12.5, fontWeight: 600 }}>
-                  ↕ Gap Below Bubble: <span style={{ color: '#0095F6' }}>{useCustomSpacing ? `${bubbleSpacing}px` : `${globalSpacing ?? 4}px (Default)`}</span>
+                <label style={{ color: '#D4D4D4', fontSize: 12, fontWeight: 600 }}>
+                  🎯 This Bubble Gap: <span style={{ color: '#0095F6' }}>{useCustomSpacing ? `${bubbleSpacing}px` : `${globalSpacing ?? 4}px (Default)`}</span>
                 </label>
                 <button
                   type="button"
@@ -1471,7 +1644,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     setBubbleSpacing(val);
                     onUpdateSpacingLive?.(message.id, val);
                   }}
-                  style={{ width: '100%', height: 8, accentColor: '#0095F6', cursor: 'pointer', touchAction: 'pan-x' }}
+                  style={{ width: '100%', height: 6, accentColor: '#0095F6', cursor: 'pointer', touchAction: 'pan-x' }}
                 />
               )}
             </div>
