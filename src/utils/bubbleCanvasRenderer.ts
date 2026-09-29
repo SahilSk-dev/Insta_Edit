@@ -230,7 +230,7 @@ export const calculateBubblesColumnLayout = (
   options: RenderBubblesOptions = {}
 ): { bubbles: MeasuredBubble[]; totalHeight: number; canvasWidth: number } => {
   const scale = options.scale || 2;
-  const baseWidth = options.baseWidth || 380;
+  const baseWidth = options.baseWidth || 420;
   const canvasWidth = baseWidth * scale;
   const emojiFont = options.emojiFont || 'SamsungOneUI_4_Xmas';
   const rightMargin = 14 * scale;
@@ -267,10 +267,23 @@ export const calculateBubblesColumnLayout = (
     let fontStack = '';
 
     if (type === 'IMAGE') {
-      const baseImgW = (msg.imageWidth || 220) * scale;
-      const maxBubbleWidth = isFromMe ? canvasWidth * 0.78 : canvasWidth * 0.72;
-      w = Math.min(baseImgW, maxBubbleWidth);
-      h = msg.imageHeight ? msg.imageHeight * scale : Math.round(w * 0.95);
+      const maxImgWidth = isFromMe
+        ? canvasWidth - leftMargin - rightMargin
+        : canvasWidth - leftMargin - avatarSize - avatarGap - rightMargin;
+      const targetWidth = (msg.imageWidth || 220) * scale;
+      w = Math.min(targetWidth, maxImgWidth);
+
+      if (msg.imageHeight) {
+        h = msg.imageHeight * scale;
+      } else {
+        const cachedImg = msg.imageResName ? getCachedChatImage(msg.imageResName) : null;
+        if (cachedImg && cachedImg.naturalWidth > 0 && cachedImg.naturalHeight > 0) {
+          const naturalRatio = cachedImg.naturalHeight / cachedImg.naturalWidth;
+          h = Math.min(Math.round(w * naturalRatio), 260 * scale);
+        } else {
+          h = Math.min(Math.round(w * 1.05), 260 * scale);
+        }
+      }
     } else if (type === 'AUDIO') {
       w = Math.min(205 * scale, canvasWidth * 0.72);
       h = 44 * scale;

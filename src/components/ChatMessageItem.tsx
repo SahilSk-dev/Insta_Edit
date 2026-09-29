@@ -85,7 +85,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         title="Tap or right-click to edit, react, or apply theme effects"
         style={{
           cursor: 'pointer',
-          maxWidth: '78%',
+          maxWidth: message.type === 'IMAGE' ? '100%' : '78%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: isMe ? 'flex-end' : 'flex-start',

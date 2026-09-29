@@ -298,7 +298,7 @@ export const App: React.FC = () => {
               emojiFont,
               reaction: reaction !== undefined ? (reaction || undefined) : msg.reaction,
               imageWidth: imageWidth !== undefined ? imageWidth : msg.imageWidth,
-              imageHeight: imageHeight !== undefined ? imageHeight : msg.imageHeight,
+              imageHeight: imageWidth !== undefined ? imageHeight : (imageHeight !== undefined ? imageHeight : msg.imageHeight),
               photoStyle: photoStyle !== undefined ? photoStyle : msg.photoStyle,
               imageFit: imageFit !== undefined ? imageFit : msg.imageFit,
               laserColor: laserColor !== undefined ? laserColor : msg.laserColor,
@@ -353,7 +353,7 @@ export const App: React.FC = () => {
         // Crisp 2x native canvas rendering: Eliminates all html2canvas distortion & wide desktop stretch!
         const dataUrl = await captureBubblesScreenshot(messages, {
           scale: 2,
-          baseWidth: 380,
+          baseWidth: 420,
           emojiFont: profile.emojiFont || 'SamsungOneUI_4_Xmas',
           avatarUrl: getAvatarUrl(profile.avatarName)
         });

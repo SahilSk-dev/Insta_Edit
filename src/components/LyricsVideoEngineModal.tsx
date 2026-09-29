@@ -89,7 +89,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
   // Common render options (Scale 3 = Full 1080p Studio HD, Scale 2 = 720p HD)
   const renderOptions: RenderBubblesOptions = {
     scale: quality === '1080P' ? 3 : 2,
-    baseWidth: 380,
+    baseWidth: 420,
     emojiFont,
     avatarUrl,
     speedMultiplier
@@ -309,7 +309,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: 380,
+          maxWidth: 420,
           maxHeight: '56vh',
           backgroundColor: '#000000',
           borderRadius: 16,
