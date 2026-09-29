@@ -10,6 +10,7 @@ import {
   RenderBubblesOptions,
   MeasuredBubble
 } from '../utils/bubbleCanvasRenderer';
+import { fixWebmDuration } from '../utils/fixWebmDuration';
 
 interface LyricsVideoEngineModalProps {
   currentMessages: ChatMessage[];
@@ -162,7 +163,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     };
   }, []);
 
-  // Start live recording of the animated bubbles with deterministic 40 FPS engine
+  // Start live recording of the animated bubbles with deterministic real-time engine
   const handleStartRecording = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -170,6 +171,15 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     try {
       // 1. Ensure all assets are preloaded into memory before recording begins
       await preloadAllMessagesAssets(messagesToRecord, avatarUrl);
+
+      const ctx = canvas.getContext('2d');
+      if (ctx && !cachedLayoutRef.current) {
+        cachedLayoutRef.current = calculateBubblesColumnLayout(ctx, messagesToRecord, renderOptions);
+      }
+      if (cachedLayoutRef.current) {
+        canvas.width = Math.round(cachedLayoutRef.current.canvasWidth / 2) * 2;
+        canvas.height = Math.round(cachedLayoutRef.current.totalHeight / 2) * 2;
+      }
       drawFrame(0);
 
       setRecordedVideoUrl(null);
@@ -179,25 +189,11 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
       recordedChunksRef.current = [];
 
       const fps = fpsOption;
-      const totalFrames = Math.round(durationSec * fps);
+      const totalDurationMs = durationSec * 1000;
       const frameIntervalMs = 1000 / fps;
 
-      // 2. Set up stream: prefer manual frame capture (Chromium requestFrame) for 100% hang-free rendering
-      let stream: MediaStream;
-      let isManualCapture = false;
-      let videoTrack: MediaStreamTrack | null = null;
-
-      try {
-        stream = (canvas as any).captureStream ? (canvas as any).captureStream(0) : null;
-        videoTrack = stream ? stream.getVideoTracks()[0] || null : null;
-        if (videoTrack && typeof (videoTrack as any).requestFrame === 'function') {
-          isManualCapture = true;
-        } else {
-          stream = canvas.captureStream(fps);
-        }
-      } catch {
-        stream = canvas.captureStream(fps);
-      }
+      // 2. Set up real-time stream at chosen FPS (e.g. 40 FPS / 60 FPS)
+      const stream = canvas.captureStream(fps);
 
       const mimeTypes = [
         'video/mp4;codecs=avc1',
@@ -227,67 +223,54 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
         }
       };
 
-      recorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: chosenMime });
-        const videoUrl = URL.createObjectURL(blob);
+      recorder.onstop = async () => {
+        const rawBlob = new Blob(recordedChunksRef.current, { type: chosenMime });
+        const recordedMs = Math.max(1000, Math.round(performance.now() - startTimeRef.current));
+
+        let finalBlob = rawBlob;
+        if (chosenMime.includes('webm')) {
+          finalBlob = await fixWebmDuration(rawBlob, recordedMs);
+        }
+
+        const videoUrl = URL.createObjectURL(finalBlob);
         setRecordedVideoUrl(videoUrl);
         setIsRecording(false);
+        setElapsedTime(durationSec);
+        setProgress(100);
       };
 
       mediaRecorderRef.current = recorder;
-      recorder.start(1000); // 1-second chunks to eliminate GC freeze
+      recorder.start(500); // 500ms chunks to eliminate GC freeze and ensure smooth disk streaming
 
-      if (isManualCapture && videoTrack) {
-        // Mode 1: Deterministic Frame-by-Frame Mode (ZERO dropped frames, ZERO hang!)
-        let currentFrame = 0;
-        const stepManual = () => {
-          if (currentFrame >= totalFrames) {
-            if (recorder.state !== 'inactive') {
+      startTimeRef.current = performance.now();
+      let lastRenderTime = 0;
+
+      const stepRealtime = (now: number) => {
+        const elapsed = now - startTimeRef.current;
+        if (elapsed >= totalDurationMs) {
+          if (recorder.state !== 'inactive') {
+            try {
               recorder.stop();
+            } catch (err) {
+              console.warn('Recorder stop error:', err);
             }
-            return;
           }
+          return;
+        }
 
-          const virtualTimeMs = currentFrame * frameIntervalMs;
-          drawFrame(virtualTimeMs);
-          (videoTrack as any).requestFrame();
+        if (now - lastRenderTime >= frameIntervalMs * 0.85) {
+          drawFrame(elapsed);
+          lastRenderTime = now;
+        }
 
-          currentFrame++;
-          const currentProgress = Math.min(100, Math.round((currentFrame / totalFrames) * 100));
-          setProgress(currentProgress);
-          setElapsedTime(parseFloat((virtualTimeMs / 1000).toFixed(1)));
+        const currentProgress = Math.min(100, Math.round((elapsed / totalDurationMs) * 100));
+        setProgress(currentProgress);
+        setElapsedTime(parseFloat((elapsed / 1000).toFixed(1)));
 
-          animFrameRef.current = requestAnimationFrame(stepManual);
-        };
-        animFrameRef.current = requestAnimationFrame(stepManual);
-      } else {
-        // Mode 2: Throttled Real-time Mode (paced strictly at target FPS to avoid CPU overload)
-        startTimeRef.current = performance.now();
-        const totalDurationMs = durationSec * 1000;
-        let lastRenderTime = 0;
-
-        const stepRealtime = (now: number) => {
-          const elapsed = now - startTimeRef.current;
-          if (elapsed >= totalDurationMs) {
-            if (recorder.state !== 'inactive') {
-              recorder.stop();
-            }
-            return;
-          }
-
-          if (now - lastRenderTime >= frameIntervalMs * 0.9) {
-            drawFrame(now);
-            lastRenderTime = now;
-          }
-
-          const currentProgress = Math.min(1, elapsed / totalDurationMs);
-          setProgress(Math.round(currentProgress * 100));
-          setElapsedTime(parseFloat((elapsed / 1000).toFixed(1)));
-
-          animFrameRef.current = requestAnimationFrame(stepRealtime);
-        };
         animFrameRef.current = requestAnimationFrame(stepRealtime);
-      }
+      };
+
+      animFrameRef.current = requestAnimationFrame(stepRealtime);
     } catch (err) {
       console.error('Failed to start media recorder:', err);
       alert('Could not start screen recorder.');
@@ -298,9 +281,12 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
   const handleStopRecordingManually = () => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (err) {
+        console.warn('Manual stop error:', err);
+      }
     }
-    setIsRecording(false);
   };
 
   // Quick snapshot capture
