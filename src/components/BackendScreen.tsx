@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatProfile, ChatMessage, BubbleTheme } from '../types/chat';
+import { ChatProfile, ChatMessage, BubbleTheme, PhotoBorderStyle } from '../types/chat';
 import { availableAvatars, getAvatarUrl } from '../data/initialData';
 import {
   BackIcon,
@@ -21,7 +21,21 @@ interface BackendScreenProps {
   messagesList: ChatMessage[];
   onSaveProfile: (profile: ChatProfile) => void;
   onAddMessage: (text: string, isFromMe: boolean, timestamp: string, theme: BubbleTheme, emojiFont?: string) => void;
-  onEditMessage: (id: string, newText: string, newTimestamp: string, isFromMe: boolean, theme: BubbleTheme, emojiFont?: string, reaction?: string) => void;
+  onEditMessage: (
+    id: string,
+    newText: string,
+    newTimestamp: string,
+    isFromMe: boolean,
+    theme: BubbleTheme,
+    emojiFont?: string,
+    reaction?: string,
+    imageWidth?: number,
+    imageHeight?: number,
+    photoStyle?: PhotoBorderStyle,
+    imageFit?: 'cover' | 'contain',
+    laserColor?: string,
+    laserSpeed?: number
+  ) => void;
   onDeleteMessage: (id: string) => void;
   onClearAllMessages: () => void;
   onResetDefaults: () => void;

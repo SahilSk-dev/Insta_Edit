@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
-import { ChatProfile, ChatMessage, BubbleTheme } from './types/chat';
+import { ChatProfile, ChatMessage, BubbleTheme, PhotoBorderStyle } from './types/chat';
 import { initialProfile, initialMessages, sahilResponses, getAvatarUrl } from './data/initialData';
 import { ChatTopBar } from './components/ChatTopBar';
 import { ChatHeader } from './components/ChatHeader';
@@ -21,6 +21,48 @@ import { LyricsVideoEngineModal } from './components/LyricsVideoEngineModal';
 import { CaptureModeModal } from './components/CaptureModeModal';
 import { captureBubblesScreenshot } from './utils/bubbleCanvasRenderer';
 import { setGlobalEmojiFont } from './data/emojiFonts';
+
+/**
+ * Fast client-side image compression to guarantee crisp HD quality
+ * while keeping base64 under ~120KB so localStorage quota is never exceeded.
+ */
+const compressImageFile = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 1200;
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        } else {
+          resolve((e.target?.result as string) || '/avatars/gaming_post.jpg');
+        }
+      };
+      img.onerror = () => {
+        resolve((e.target?.result as string) || '/avatars/gaming_post.jpg');
+      };
+      img.src = (e.target?.result as string) || '';
+    };
+    reader.readAsDataURL(file);
+  });
+};
 
 export const App: React.FC = () => {
   // Persistence with localStorage
@@ -63,17 +105,13 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem('insta_chat_messages');
       if (saved) {
         const parsed: ChatMessage[] = JSON.parse(saved);
-        // Automatically migrate if previous messages had old gaming text/images or no Luxe bubble
-        if (
-          parsed.some((m) => m.text?.includes('Free Fire') || m.type === 'IMAGE' || m.type === 'AUDIO') ||
-          !parsed.some((m) => m.theme === 'GOLDEN_LUXE')
-        ) {
-          return initialMessages;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
         }
-        return parsed;
       }
       return initialMessages;
-    } catch {
+    } catch (e) {
+      console.warn('Error reading chat messages from localStorage:', e);
       return initialMessages;
     }
   });
@@ -167,6 +205,11 @@ export const App: React.FC = () => {
       timestamp: time,
       type,
       imageResName,
+      imageWidth: 220,
+      photoStyle: 'NORMAL',
+      laserColor: '#00F0FF',
+      laserSpeed: 2.4,
+      imageFit: 'cover',
       audioDuration,
       theme,
       emojiFont,
@@ -184,7 +227,13 @@ export const App: React.FC = () => {
     isFromMe: boolean,
     theme: BubbleTheme,
     emojiFont?: string,
-    reaction?: string
+    reaction?: string,
+    imageWidth?: number,
+    imageHeight?: number,
+    photoStyle?: PhotoBorderStyle,
+    imageFit?: 'cover' | 'contain',
+    laserColor?: string,
+    laserSpeed?: number
   ) => {
     setMessages((prev) =>
       prev.map((msg) =>
@@ -196,7 +245,13 @@ export const App: React.FC = () => {
               isFromMe,
               theme,
               emojiFont,
-              reaction: reaction !== undefined ? (reaction || undefined) : msg.reaction
+              reaction: reaction !== undefined ? (reaction || undefined) : msg.reaction,
+              imageWidth: imageWidth !== undefined ? imageWidth : msg.imageWidth,
+              imageHeight: imageHeight !== undefined ? imageHeight : msg.imageHeight,
+              photoStyle: photoStyle !== undefined ? photoStyle : msg.photoStyle,
+              imageFit: imageFit !== undefined ? imageFit : msg.imageFit,
+              laserColor: laserColor !== undefined ? laserColor : msg.laserColor,
+              laserSpeed: laserSpeed !== undefined ? laserSpeed : msg.laserSpeed
             }
           : msg
       )
@@ -508,22 +563,27 @@ export const App: React.FC = () => {
                 }
               }}
               onCameraClick={() => {
-                handleSendMessage('Free Fire Booyah victory screenshot', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
+                handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
               }}
               onMicClick={() => {
                 handleSendMessage('', activeSender === 'ME', 'AUDIO', undefined, '0:04');
               }}
-              onGalleryClick={(file) => {
+              onGalleryClick={async (file) => {
                 if (file) {
-                  const reader = new FileReader();
-                  reader.onload = (e) => {
-                    if (e.target?.result) {
-                      handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', e.target.result as string);
-                    }
-                  };
-                  reader.readAsDataURL(file);
+                  try {
+                    const compressedDataUrl = await compressImageFile(file);
+                    handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', compressedDataUrl);
+                  } catch {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      if (e.target?.result) {
+                        handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', e.target.result as string);
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }
                 } else {
-                  handleSendMessage('Free Fire Booyah victory screenshot', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
+                  handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
                 }
               }}
               onPlusClick={() => {
@@ -612,10 +672,38 @@ export const App: React.FC = () => {
           <MessageActionModal
             message={selectedMessageForAction}
             contactName={profile.name}
-            onEditMessage={(id, text, time, isMe, theme, emojiFont, reaction) => {
-              handleEditMessage(id, text, time, isMe, theme, emojiFont, reaction);
+            onEditMessage={(
+              id,
+              text,
+              time,
+              isMe,
+              theme,
+              emojiFont,
+              reaction,
+              imageWidth,
+              imageHeight,
+              photoStyle,
+              imageFit,
+              laserColor,
+              laserSpeed
+            ) => {
+              handleEditMessage(
+                id,
+                text,
+                time,
+                isMe,
+                theme,
+                emojiFont,
+                reaction,
+                imageWidth,
+                imageHeight,
+                photoStyle,
+                imageFit,
+                laserColor,
+                laserSpeed
+              );
               setSelectedMessageForAction(null);
-              showToast('Message updated!');
+              showToast('Updated successfully!');
             }}
             onDeleteMessage={(id) => {
               handleDeleteMessage(id);

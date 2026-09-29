@@ -7,6 +7,8 @@ export type BubbleTheme =
 
 export type MessageType = 'TEXT' | 'IMAGE' | 'AUDIO' | 'STICKER';
 
+export type PhotoBorderStyle = 'NORMAL' | 'LASER';
+
 export interface ChatMessage {
   id: string;
   text: string;
@@ -14,6 +16,12 @@ export interface ChatMessage {
   timestamp: string;
   type: MessageType;
   imageResName?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageFit?: 'cover' | 'contain';
+  photoStyle?: PhotoBorderStyle;
+  laserColor?: string;
+  laserSpeed?: number;
   audioDuration?: string;
   theme: BubbleTheme;
   orderIndex: number;

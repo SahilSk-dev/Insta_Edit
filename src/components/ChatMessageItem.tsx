@@ -89,28 +89,119 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         }}
       >
         {/* Type: IMAGE */}
-        {message.type === 'IMAGE' && (
-          <div
-            style={{
-              maxWidth: 220,
-              borderRadius: 16,
-              overflow: 'hidden',
-              backgroundColor: '#262626',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)'
-            }}
-          >
-            <img
-              src={message.imageResName || '/avatars/gaming_post.jpg'}
-              alt="Photo"
+        {message.type === 'IMAGE' && (() => {
+          const width = message.imageWidth || 220;
+          const height = message.imageHeight;
+          const fit = message.imageFit || 'cover';
+          const isLaser = message.photoStyle === 'LASER';
+          const laserColor = message.laserColor || '#00F0FF';
+          const isGradientLaser = laserColor === 'gradient';
+          const speed = message.laserSpeed || 2.4;
+
+          return (
+            <div
               style={{
-                width: '100%',
-                maxHeight: 220,
-                objectFit: 'cover',
-                display: 'block'
+                position: 'relative',
+                width: width,
+                maxWidth: '100%',
+                display: 'inline-block'
               }}
-            />
-          </div>
-        )}
+            >
+              {/* Outer border wrapper */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  borderRadius: 16,
+                  padding: isLaser ? 2.5 : 0,
+                  overflow: 'hidden',
+                  backgroundColor: isLaser ? '#0a0a0a' : '#262626',
+                  boxShadow: isLaser
+                    ? isGradientLaser
+                      ? '0 0 16px rgba(245, 96, 64, 0.5), 0 0 32px rgba(138, 63, 252, 0.35), 0 4px 16px rgba(0,0,0,0.6)'
+                      : `0 0 16px ${laserColor}70, 0 0 32px ${laserColor}30, 0 4px 16px rgba(0,0,0,0.6)`
+                    : '0 4px 14px rgba(0, 0, 0, 0.4)',
+                  transition: 'box-shadow 0.3s ease, padding 0.2s ease',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {/* Traveling Laser Light Beam around the border */}
+                {isLaser && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '-70%',
+                      left: '-70%',
+                      width: '240%',
+                      height: '240%',
+                      background: isGradientLaser
+                        ? 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, #FCAF45 300deg, #F56040 325deg, #8A3FFC 350deg, #FFFFFF 360deg)'
+                        : `conic-gradient(from 0deg, transparent 0deg, transparent 270deg, ${laserColor}15 285deg, ${laserColor}80 320deg, ${laserColor} 345deg, #FFFFFF 360deg)`,
+                      animation: `laserSweep ${speed}s linear infinite`,
+                      pointerEvents: 'none',
+                      zIndex: 1
+                    }}
+                  />
+                )}
+
+                {/* Inner Image Frame */}
+                <div
+                  style={{
+                    position: 'relative',
+                    zIndex: 2,
+                    borderRadius: isLaser ? 13.5 : 16,
+                    overflow: 'hidden',
+                    backgroundColor: '#1c1c1c',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%',
+                    height: height ? `${height}px` : 'auto'
+                  }}
+                >
+                  <img
+                    src={message.imageResName || '/avatars/gaming_post.jpg'}
+                    alt="Photo"
+                    style={{
+                      width: '100%',
+                      height: height ? `${height}px` : 'auto',
+                      maxHeight: height ? `${height}px` : 260,
+                      objectFit: fit,
+                      display: 'block'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Top-Right Indicator Pill (Dimensions & Laser Style) */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  zIndex: 4,
+                  backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                  backdropFilter: 'blur(4px)',
+                  borderRadius: 10,
+                  padding: '2px 6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  fontSize: 10,
+                  color: isLaser ? '#00F0FF' : '#E0E0E0',
+                  pointerEvents: 'none',
+                  opacity: 0.85,
+                  fontWeight: 600,
+                  letterSpacing: '0.3px',
+                  border: isLaser ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255,255,255,0.15)'
+                }}
+              >
+                <span>{width}×{height || 'auto'}</span>
+                {isLaser && <span>⚡</span>}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Type: STICKER */}
         {message.type === 'STICKER' && (
@@ -251,6 +342,10 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         @keyframes popInReaction {
           0% { transform: scale(0.3); opacity: 0; }
           100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes laserSweep {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </div>

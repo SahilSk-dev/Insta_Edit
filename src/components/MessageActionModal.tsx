@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChatMessage, BubbleTheme } from '../types/chat';
+import { ChatMessage, BubbleTheme, PhotoBorderStyle } from '../types/chat';
 import { EditIcon, DeleteIcon, SwapIcon } from './InstagramIcons';
 import { AestheticLyricsBubble, calculateBubbleLayout, renderBubbleTextWithEmojiFont } from './AestheticBubble';
 import { EmojiFontPreviewDropdown } from './EmojiFontPreviewDropdown';
@@ -14,7 +14,13 @@ interface MessageActionModalProps {
     isFromMe: boolean,
     theme: BubbleTheme,
     emojiFont?: string,
-    reaction?: string
+    reaction?: string,
+    imageWidth?: number,
+    imageHeight?: number,
+    photoStyle?: PhotoBorderStyle,
+    imageFit?: 'cover' | 'contain',
+    laserColor?: string,
+    laserSpeed?: number
   ) => void;
   onDeleteMessage: (id: string) => void;
   onReactEmoji: (emoji: string) => void;
@@ -29,6 +35,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   onReactEmoji,
   onDismiss
 }) => {
+  const isImageMessage = message.type === 'IMAGE';
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
   const [editTimestamp, setEditTimestamp] = useState(message.timestamp);
@@ -36,6 +43,15 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   const [selectedTheme, setSelectedTheme] = useState<BubbleTheme>(message.theme || 'CLASSIC');
   const [selectedEmojiFont, setSelectedEmojiFont] = useState<string>(message.emojiFont || '');
   const [selectedReaction, setSelectedReaction] = useState<string>(message.reaction || '');
+
+  // Photo size & style states (Normal by default, as requested)
+  const [photoWidth, setPhotoWidth] = useState<number>(message.imageWidth || 220);
+  const [photoHeight, setPhotoHeight] = useState<number>(message.imageHeight || 220);
+  const [isAutoHeight, setIsAutoHeight] = useState<boolean>(message.imageHeight === undefined);
+  const [photoFit, setPhotoFit] = useState<'cover' | 'contain'>(message.imageFit || 'cover');
+  const [photoBorderStyle, setPhotoBorderStyle] = useState<PhotoBorderStyle>(message.photoStyle || 'NORMAL');
+  const [laserColor, setLaserColor] = useState<string>(message.laserColor || '#00F0FF');
+  const [laserSpeed, setLaserSpeed] = useState<number>(message.laserSpeed || 2.4);
 
   const themes: { key: BubbleTheme; label: string }[] = [
     { key: 'CLASSIC', label: 'Normal' },
@@ -154,74 +170,469 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               </div>
             )}
 
-            {/* Quick Apply Theme / Overlay */}
-            <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-              Lyrics / Overlay Effects (Projapoti, Hearts, Neon):
-            </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
-              {themes.map((thm) => {
-                const isSelected = message.theme === thm.key;
-                return (
-                  <button
-                    key={thm.key}
-                    onClick={() => {
-                      onEditMessage(message.id, message.text, message.timestamp, message.isFromMe, thm.key);
-                      onDismiss();
-                    }}
-                    style={{
-                      borderRadius: 8,
-                      backgroundColor: isSelected ? '#0095F6' : '#262626',
-                      color: isSelected ? '#FFFFFF' : '#A8A8A8',
-                      border: 'none',
-                      padding: '8px 12px',
-                      fontSize: 12,
-                      fontWeight: isSelected ? 700 : 400,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {thm.label}
-                  </button>
-                );
-              })}
-            </div>
+            {isImageMessage ? (
+              /* ================= PHOTO CUSTOMIZER (SIZE & LASER STYLE) ================= */
+              <div
+                style={{
+                  backgroundColor: '#1E1E1E',
+                  borderRadius: 14,
+                  padding: '14px 16px',
+                  marginBottom: 16,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 14,
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 700 }}>
+                    🖼️ Photo Size & Laser Style
+                  </span>
+                  <span style={{ color: '#0095F6', fontSize: 12, fontWeight: 600 }}>
+                    {photoWidth}px × {isAutoHeight ? 'Auto' : `${photoHeight}px`}
+                  </span>
+                </div>
 
-            {/* Message Preview */}
-            <div
-              style={{
-                backgroundColor: '#262626',
-                borderRadius: 12,
-                padding: 12,
-                marginBottom: 16
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-                <span
+                {/* Interactive Live Preview of Photo with Laser */}
+                <div
                   style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: message.isFromMe ? '#8A3FFC' : '#0095F6',
-                    display: 'inline-block',
-                    marginRight: 8
-                  }}
-                />
-                <span
-                  style={{
-                    color: message.isFromMe ? '#8A3FFC' : '#0095F6',
-                    fontSize: 12,
-                    fontWeight: 700
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '14px 0',
+                    backgroundColor: '#111111',
+                    borderRadius: 12,
+                    overflow: 'hidden'
                   }}
                 >
-                  {message.isFromMe ? 'You (Me)' : 'Received'}
-                </span>
-                <span style={{ color: '#8E8E93', fontSize: 11, marginLeft: 8 }}>
-                  {message.timestamp}
-                </span>
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: Math.min(photoWidth, 270),
+                      maxWidth: '100%',
+                      borderRadius: 16,
+                      padding: photoBorderStyle === 'LASER' ? 2.5 : 0,
+                      overflow: 'hidden',
+                      backgroundColor: photoBorderStyle === 'LASER' ? '#0a0a0a' : '#262626',
+                      boxShadow: photoBorderStyle === 'LASER'
+                        ? laserColor === 'gradient'
+                          ? '0 0 16px rgba(245, 96, 64, 0.5), 0 0 32px rgba(138, 63, 252, 0.35)'
+                          : `0 0 16px ${laserColor}70, 0 0 32px ${laserColor}30`
+                        : '0 4px 14px rgba(0,0,0,0.4)',
+                      transition: 'box-shadow 0.3s ease, padding 0.2s ease',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    {photoBorderStyle === 'LASER' && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '-70%',
+                          left: '-70%',
+                          width: '240%',
+                          height: '240%',
+                          background: laserColor === 'gradient'
+                            ? 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, #FCAF45 300deg, #F56040 325deg, #8A3FFC 350deg, #FFFFFF 360deg)'
+                            : `conic-gradient(from 0deg, transparent 0deg, transparent 270deg, ${laserColor}15 285deg, ${laserColor}80 320deg, ${laserColor} 345deg, #FFFFFF 360deg)`,
+                          animation: `laserSweep ${laserSpeed}s linear infinite`,
+                          pointerEvents: 'none',
+                          zIndex: 1
+                        }}
+                      />
+                    )}
+                    <div
+                      style={{
+                        position: 'relative',
+                        zIndex: 2,
+                        borderRadius: photoBorderStyle === 'LASER' ? 13.5 : 16,
+                        overflow: 'hidden',
+                        backgroundColor: '#1c1c1c',
+                        width: '100%',
+                        height: isAutoHeight ? 'auto' : `${Math.min(photoHeight || 200, 240)}px`
+                      }}
+                    >
+                      <img
+                        src={message.imageResName || '/avatars/gaming_post.jpg'}
+                        alt="Preview"
+                        style={{
+                          width: '100%',
+                          height: isAutoHeight ? 'auto' : `${Math.min(photoHeight || 200, 240)}px`,
+                          maxHeight: isAutoHeight ? 240 : undefined,
+                          objectFit: photoFit,
+                          display: 'block'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 1. Style Selection (Normal vs Laser Light) */}
+                <div>
+                  <div style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                    Photo Edge Style (বর্ডার স্টাইল):
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBorderStyle('NORMAL')}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 3,
+                        padding: '10px 8px',
+                        borderRadius: 10,
+                        backgroundColor: photoBorderStyle === 'NORMAL' ? '#262626' : '#141414',
+                        border: photoBorderStyle === 'NORMAL' ? '2px solid #0095F6' : '1px solid #2e2e2e',
+                        color: photoBorderStyle === 'NORMAL' ? '#FFFFFF' : '#8E8E93',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span style={{ fontSize: 13.5, fontWeight: 700 }}>🔘 Normal Style</span>
+                      <span style={{ fontSize: 10.5, color: '#A8A8A8' }}>সাধারণ ইন্সটাগ্রাম বর্ডার (ডিফল্ট)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBorderStyle('LASER')}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 3,
+                        padding: '10px 8px',
+                        borderRadius: 10,
+                        backgroundColor: photoBorderStyle === 'LASER' ? 'rgba(0, 240, 255, 0.12)' : '#141414',
+                        border: photoBorderStyle === 'LASER' ? '2px solid #00F0FF' : '1px solid #2e2e2e',
+                        color: photoBorderStyle === 'LASER' ? '#00F0FF' : '#8E8E93',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span style={{ fontSize: 13.5, fontWeight: 700 }}>⚡ Laser Light</span>
+                      <span style={{ fontSize: 10.5, color: photoBorderStyle === 'LASER' ? '#00F0FF' : '#A8A8A8' }}>
+                        ঘুরন্ত লেজার লাইট
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Laser Light Options (Only when LASER is selected) */}
+                {photoBorderStyle === 'LASER' && (
+                  <div
+                    style={{
+                      backgroundColor: 'rgba(0, 240, 255, 0.05)',
+                      border: '1px solid rgba(0, 240, 255, 0.2)',
+                      borderRadius: 10,
+                      padding: 10
+                    }}
+                  >
+                    <div style={{ color: '#00F0FF', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>
+                      Laser Color (লেজার কালার):
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                      {[
+                        { label: '⚡ Cyan', val: '#00F0FF' },
+                        { label: '🟢 Emerald', val: '#00FF66' },
+                        { label: '🔴 Hot Pink', val: '#FF007F' },
+                        { label: '🟡 Gold', val: '#FFD700' },
+                        { label: '🟣 Violet', val: '#A855F7' },
+                        { label: '⚪ White', val: '#FFFFFF' },
+                        { label: '🌈 Gradient', val: 'gradient' }
+                      ].map((c) => {
+                        const isSel = laserColor === c.val;
+                        return (
+                          <button
+                            key={c.val}
+                            type="button"
+                            onClick={() => setLaserColor(c.val)}
+                            style={{
+                              padding: '5px 9px',
+                              borderRadius: 6,
+                              backgroundColor: isSel ? '#00F0FF' : '#262626',
+                              color: isSel ? '#000000' : '#FFFFFF',
+                              border: 'none',
+                              fontSize: 11,
+                              fontWeight: isSel ? 700 : 500,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {c.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#A8A8A8', fontSize: 11, fontWeight: 500 }}>Laser Speed:</span>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {[
+                          { label: 'Fast (1.4s)', val: 1.4 },
+                          { label: 'Normal (2.4s)', val: 2.4 },
+                          { label: 'Smooth (3.8s)', val: 3.8 }
+                        ].map((s) => (
+                          <button
+                            key={s.val}
+                            type="button"
+                            onClick={() => setLaserSpeed(s.val)}
+                            style={{
+                              padding: '3px 7px',
+                              borderRadius: 5,
+                              backgroundColor: laserSpeed === s.val ? '#00F0FF' : '#262626',
+                              color: laserSpeed === s.val ? '#000000' : '#A8A8A8',
+                              border: 'none',
+                              fontSize: 10.5,
+                              fontWeight: laserSpeed === s.val ? 700 : 400,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Width Controller */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <label style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 600 }}>
+                      Width (প্রস্থ): {photoWidth}px
+                    </label>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {[160, 220, 280, 340].map((w) => (
+                        <button
+                          key={w}
+                          type="button"
+                          onClick={() => setPhotoWidth(w)}
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            backgroundColor: photoWidth === w ? '#0095F6' : '#262626',
+                            color: photoWidth === w ? '#FFFFFF' : '#A8A8A8',
+                            border: 'none',
+                            fontSize: 10.5,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {w === 220 ? '220 (Def)' : `${w}`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min={120}
+                    max={360}
+                    step={5}
+                    value={photoWidth}
+                    onChange={(e) => setPhotoWidth(Number(e.target.value))}
+                    style={{ width: '100%', accentColor: '#0095F6', cursor: 'pointer' }}
+                  />
+                </div>
+
+                {/* 3. Height Controller */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <label style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 600 }}>
+                      Height (উচ্চতা): {isAutoHeight ? 'Auto (স্বাভাবিক রেশিও)' : `${photoHeight}px`}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAutoHeight(!isAutoHeight)}
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        backgroundColor: isAutoHeight ? '#0095F6' : '#262626',
+                        color: isAutoHeight ? '#FFFFFF' : '#A8A8A8',
+                        border: 'none',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isAutoHeight ? '✓ Auto Ratio' : 'Set Auto'}
+                    </button>
+                  </div>
+
+                  {!isAutoHeight && (
+                    <>
+                      <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+                        {[
+                          { label: 'Square 1:1', h: photoWidth },
+                          { label: 'Portrait 4:5', h: Math.round(photoWidth * 1.25) },
+                          { label: 'Cinema 16:9', h: Math.round(photoWidth * 0.56) }
+                        ].map((asp) => (
+                          <button
+                            key={asp.label}
+                            type="button"
+                            onClick={() => setPhotoHeight(asp.h)}
+                            style={{
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              backgroundColor: photoHeight === asp.h ? '#0095F6' : '#262626',
+                              color: photoHeight === asp.h ? '#FFFFFF' : '#A8A8A8',
+                              border: 'none',
+                              fontSize: 10.5,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {asp.label}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="range"
+                        min={80}
+                        max={450}
+                        step={5}
+                        value={photoHeight || 220}
+                        onChange={(e) => setPhotoHeight(Number(e.target.value))}
+                        style={{ width: '100%', accentColor: '#0095F6', cursor: 'pointer' }}
+                      />
+                    </>
+                  )}
+                </div>
+
+                {/* 4. Object Fit */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 600 }}>Image Fit:</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(['cover', 'contain'] as const).map((fitMode) => (
+                      <button
+                        key={fitMode}
+                        type="button"
+                        onClick={() => setPhotoFit(fitMode)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 6,
+                          backgroundColor: photoFit === fitMode ? '#0095F6' : '#262626',
+                          color: photoFit === fitMode ? '#FFFFFF' : '#A8A8A8',
+                          border: 'none',
+                          fontSize: 11,
+                          fontWeight: photoFit === fitMode ? 700 : 400,
+                          cursor: 'pointer',
+                          textTransform: 'capitalize'
+                        }}
+                      >
+                        {fitMode}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Save Button for Photo Settings */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onEditMessage(
+                      message.id,
+                      message.text,
+                      message.timestamp,
+                      message.isFromMe,
+                      message.theme,
+                      message.emojiFont,
+                      selectedReaction || undefined,
+                      photoWidth,
+                      isAutoHeight ? undefined : photoHeight,
+                      photoBorderStyle,
+                      photoFit,
+                      laserColor,
+                      laserSpeed
+                    );
+                    onDismiss();
+                  }}
+                  style={{
+                    backgroundColor: '#0095F6',
+                    color: '#FFFFFF',
+                    borderRadius: 8,
+                    border: 'none',
+                    padding: '11px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    marginTop: 4,
+                    boxShadow: '0 2px 10px rgba(0, 149, 246, 0.4)'
+                  }}
+                >
+                  Save Photo Size & Style (সেভ করুন)
+                </button>
               </div>
-              <div style={{ color: '#FFFFFF', fontSize: 14 }}>
-                {message.text || `[${message.type}]`}
-              </div>
-            </div>
+            ) : (
+              <>
+                {/* Quick Apply Theme / Overlay */}
+                <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                  Lyrics / Overlay Effects (Projapoti, Hearts, Neon):
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+                  {themes.map((thm) => {
+                    const isSelected = message.theme === thm.key;
+                    return (
+                      <button
+                        key={thm.key}
+                        onClick={() => {
+                          onEditMessage(message.id, message.text, message.timestamp, message.isFromMe, thm.key);
+                          onDismiss();
+                        }}
+                        style={{
+                          borderRadius: 8,
+                          backgroundColor: isSelected ? '#0095F6' : '#262626',
+                          color: isSelected ? '#FFFFFF' : '#A8A8A8',
+                          border: 'none',
+                          padding: '8px 12px',
+                          fontSize: 12,
+                          fontWeight: isSelected ? 700 : 400,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {thm.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Message Preview */}
+                <div
+                  style={{
+                    backgroundColor: '#262626',
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 16
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: message.isFromMe ? '#8A3FFC' : '#0095F6',
+                        display: 'inline-block',
+                        marginRight: 8
+                      }}
+                    />
+                    <span
+                      style={{
+                        color: message.isFromMe ? '#8A3FFC' : '#0095F6',
+                        fontSize: 12,
+                        fontWeight: 700
+                      }}
+                    >
+                      {message.isFromMe ? 'You (Me)' : 'Received'}
+                    </span>
+                    <span style={{ color: '#8E8E93', fontSize: 11, marginLeft: 8 }}>
+                      {message.timestamp}
+                    </span>
+                  </div>
+                  <div style={{ color: '#FFFFFF', fontSize: 14 }}>
+                    {message.text || `[${message.type}]`}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Actions list */}
             <div>
@@ -617,7 +1028,13 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     editIsMe,
                     selectedTheme,
                     selectedEmojiFont || undefined,
-                    selectedReaction || undefined
+                    selectedReaction || undefined,
+                    photoWidth,
+                    isAutoHeight ? undefined : photoHeight,
+                    photoBorderStyle,
+                    photoFit,
+                    laserColor,
+                    laserSpeed
                   );
                   onDismiss();
                 }}
@@ -639,6 +1056,13 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes laserSweep {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
