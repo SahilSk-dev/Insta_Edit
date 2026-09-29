@@ -1,4 +1,4 @@
-import { ChatMessage, BubbleTheme } from '../types/chat';
+import { ChatMessage, BubbleTheme, MessageType, PhotoBorderStyle } from '../types/chat';
 import { calculateBubbleLayout } from '../components/AestheticBubble';
 
 // ---------------------------------------------------------------------------
@@ -184,6 +184,7 @@ const createRoundedRectPath = (
 
 export interface MeasuredBubble {
   id: string;
+  type: MessageType;
   text: string;
   theme: BubbleTheme;
   isFromMe: boolean;
@@ -203,6 +204,19 @@ export interface MeasuredBubble {
   iconScale: number;
   fontStack: string;
   reaction?: string;
+  customSpacing?: number;
+
+  // Photo / Image properties
+  imageResName?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageFit?: 'cover' | 'contain';
+  photoStyle?: PhotoBorderStyle;
+  laserColor?: string;
+  laserSpeed?: number;
+
+  // Audio / Voice properties
+  audioDuration?: string;
 }
 
 /**
@@ -219,123 +233,148 @@ export const calculateBubblesColumnLayout = (
   const baseWidth = options.baseWidth || 380;
   const canvasWidth = baseWidth * scale;
   const emojiFont = options.emojiFont || 'SamsungOneUI_4_Xmas';
-  const validMessages = messages.filter((m) => m.type === 'TEXT' && m.text.trim());
   const rightMargin = 14 * scale;
   const leftMargin = 14 * scale;
   const avatarSize = 28 * scale;
   const avatarGap = 8 * scale;
-  const gap = 8 * scale;
+  const defaultGap = 6 * scale;
   const topPad = 16 * scale;
-  const bottomPad = 16 * scale;
+  const bottomPad = 24 * scale;
+
+  // Accept all valid messages: TEXT with content, or IMAGE, or AUDIO, or STICKER
+  const validMessages = messages.filter((m) => {
+    if (m.type === 'IMAGE' || m.type === 'AUDIO' || m.type === 'STICKER') return true;
+    return Boolean(m.text && m.text.trim());
+  });
 
   let curY = topPad;
 
   const bubbles: MeasuredBubble[] = validMessages.map((msg) => {
-    // Both sides together ALWAYS (dui dhar eksathe): Left (incoming) with avatar, Right (outgoing)!
     const isFromMe = msg.isFromMe;
     const theme = msg.theme || 'CLASSIC';
-    const text = msg.text.trim();
+    const type = msg.type || 'TEXT';
+    const text = (msg.text || '').trim();
 
-    // Use exact layout engine from AestheticBubble
-    const layout = calculateBubbleLayout(text);
-    const parsedFontSize = parseFloat(layout.fontSize) || 16;
-    const fontSize = Math.round(parsedFontSize * scale);
-    const parsedLineHeight = parseFloat(layout.lineHeight) || (parsedFontSize * 1.35);
-    const lineHeight = Math.round(parsedLineHeight * scale);
+    let w = 0;
+    let h = 0;
+    let fontSize = 15 * scale;
+    let fontWeight = 400;
+    let lineHeight = 20 * scale;
+    let lines: string[] = [];
+    let padHoriz = 12 * scale;
+    let padVert = 8 * scale;
+    let iconScale = 1.0;
+    let fontStack = '';
 
-    // Parse horizontal and vertical padding
-    const padParts = layout.padding.split(' ').map((p) => parseFloat(p) || 8);
-    const padVert = (padParts[0] || 7.5) * scale;
-    const padHoriz = (padParts[1] || 14) * scale;
-    const minWidth = (parseFloat(layout.minWidth) || (layout.isUltraShort ? 50 : 44)) * scale;
+    if (type === 'IMAGE') {
+      const baseImgW = (msg.imageWidth || 220) * scale;
+      const maxBubbleWidth = isFromMe ? canvasWidth * 0.78 : canvasWidth * 0.72;
+      w = Math.min(baseImgW, maxBubbleWidth);
+      h = msg.imageHeight ? msg.imageHeight * scale : Math.round(w * 0.95);
+    } else if (type === 'AUDIO') {
+      w = Math.min(205 * scale, canvasWidth * 0.72);
+      h = 44 * scale;
+    } else if (type === 'STICKER') {
+      w = 54 * scale;
+      h = 54 * scale;
+      lines = [text || '🔥'];
+    } else {
+      // TEXT message layout
+      const layout = calculateBubbleLayout(text);
+      const parsedFontSize = parseFloat(layout.fontSize) || 16;
+      fontSize = Math.round(parsedFontSize * scale);
+      const parsedLineHeight = parseFloat(layout.lineHeight) || (parsedFontSize * 1.35);
+      lineHeight = Math.round(parsedLineHeight * scale);
 
-    const effectiveMsgEmojiFont = msg.emojiFont || emojiFont;
-    const fontStack = `${layout.fontWeight} ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Nirmala UI", "Kohinoor Bangla", "Noto Sans Bengali", Helvetica, Arial, '${effectiveMsgEmojiFont}', "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
-    ctx.font = fontStack;
+      const padParts = layout.padding.split(' ').map((p) => parseFloat(p) || 8);
+      padVert = (padParts[0] || 7.5) * scale;
+      padHoriz = (padParts[1] || 14) * scale;
+      const minWidth = (parseFloat(layout.minWidth) || (layout.isUltraShort ? 50 : 44)) * scale;
 
-    // Max bubble width depending on whether it's sent (78%) or received (with avatar)
-    const maxBubbleWidth = isFromMe ? canvasWidth * 0.78 : canvasWidth * 0.72;
-    const maxInnerWidth = maxBubbleWidth - padHoriz * 2;
+      const effectiveMsgEmojiFont = msg.emojiFont || emojiFont;
+      fontStack = `${layout.fontWeight} ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Nirmala UI", "Kohinoor Bangla", "Noto Sans Bengali", Helvetica, Arial, '${effectiveMsgEmojiFont}', "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+      ctx.font = fontStack;
 
-    // Robust line & character wrapping that NEVER overflows bubble boundaries:
-    const rawLines = text.split('\n');
-    const lines: string[] = [];
+      const maxBubbleWidth = isFromMe ? canvasWidth * 0.78 : canvasWidth * 0.72;
+      const maxInnerWidth = maxBubbleWidth - padHoriz * 2;
 
-    rawLines.forEach((rawLine) => {
-      const words = rawLine.split(' ');
-      let currentLine = '';
+      const rawLines = text.split('\n');
+      rawLines.forEach((rawLine) => {
+        const words = rawLine.split(' ');
+        let currentLine = '';
 
-      words.forEach((word) => {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const testWidth = ctx.measureText(testLine).width;
+        words.forEach((word) => {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const testWidth = ctx.measureText(testLine).width;
 
-        if (testWidth <= maxInnerWidth) {
-          currentLine = testLine;
-        } else {
-          if (currentLine) {
-            lines.push(currentLine);
-            currentLine = '';
-          }
-
-          // If the word itself is wider than maxInnerWidth, break by character
-          if (ctx.measureText(word).width > maxInnerWidth) {
-            let chunk = '';
-            for (const char of word) {
-              const testChunk = chunk + char;
-              if (ctx.measureText(testChunk).width <= maxInnerWidth) {
-                chunk = testChunk;
-              } else {
-                if (chunk) lines.push(chunk);
-                chunk = char;
-              }
-            }
-            if (chunk) currentLine = chunk;
+          if (testWidth <= maxInnerWidth) {
+            currentLine = testLine;
           } else {
-            currentLine = word;
+            if (currentLine) {
+              lines.push(currentLine);
+              currentLine = '';
+            }
+
+            if (ctx.measureText(word).width > maxInnerWidth) {
+              let chunk = '';
+              for (const char of word) {
+                const testChunk = chunk + char;
+                if (ctx.measureText(testChunk).width <= maxInnerWidth) {
+                  chunk = testChunk;
+                } else {
+                  if (chunk) lines.push(chunk);
+                  chunk = char;
+                }
+              }
+              if (chunk) currentLine = chunk;
+            } else {
+              currentLine = word;
+            }
           }
+        });
+
+        if (currentLine) {
+          lines.push(currentLine);
         }
       });
 
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-    });
+      if (lines.length === 0) lines.push(text);
 
-    if (lines.length === 0) lines.push(text);
+      let maxLineWidth = 0;
+      lines.forEach((line) => {
+        const lineW = ctx.measureText(line).width;
+        if (lineW > maxLineWidth) maxLineWidth = lineW;
+      });
 
-    // Calculate maximum width among wrapped lines
-    let maxLineWidth = 0;
-    lines.forEach((line) => {
-      const w = ctx.measureText(line).width;
-      if (w > maxLineWidth) maxLineWidth = w;
-    });
-
-    const w = Math.min(
-      Math.max(maxLineWidth + padHoriz * 2, minWidth),
-      maxBubbleWidth
-    );
-    const h = Math.max(lines.length * lineHeight + padVert * 2, 38 * scale);
+      w = Math.min(
+        Math.max(maxLineWidth + padHoriz * 2, minWidth),
+        maxBubbleWidth
+      );
+      h = Math.max(lines.length * lineHeight + padVert * 2, 38 * scale);
+      fontWeight = layout.fontWeight;
+      iconScale = layout.iconScale;
+    }
 
     let x = 0;
     let avatarX: number | undefined;
     let avatarY: number | undefined;
 
     if (isFromMe) {
-      // Sent message: Aligned to the RIGHT
       x = canvasWidth - w - rightMargin;
     } else {
-      // Received message: Aligned to the LEFT with 28px avatar
       x = leftMargin + avatarSize + avatarGap;
       avatarX = leftMargin;
-      avatarY = curY + h - avatarSize - 2 * scale; // Bottom-aligned matching Instagram DM
+      avatarY = curY + h - avatarSize - 2 * scale;
     }
 
     const y = curY;
-    const extraReactionGap = msg.reaction ? 10 * scale : 0;
-    curY += h + gap + extraReactionGap;
+    const effectiveBubbleGap = msg.customSpacing !== undefined ? msg.customSpacing * scale : defaultGap;
+    const finalGap = msg.reaction ? Math.max(effectiveBubbleGap, 8 * scale) : effectiveBubbleGap;
+    curY += h + finalGap;
 
     return {
       id: msg.id,
+      type,
       text,
       theme,
       isFromMe,
@@ -347,18 +386,27 @@ export const calculateBubblesColumnLayout = (
       avatarY,
       avatarSize: !isFromMe ? avatarSize : undefined,
       fontSize,
-      fontWeight: layout.fontWeight,
+      fontWeight,
       lineHeight,
       lines,
       padHoriz,
       padVert,
-      iconScale: layout.iconScale,
+      iconScale,
       fontStack,
-      reaction: msg.reaction
+      reaction: msg.reaction,
+      customSpacing: msg.customSpacing,
+      imageResName: msg.imageResName,
+      imageWidth: msg.imageWidth,
+      imageHeight: msg.imageHeight,
+      imageFit: msg.imageFit,
+      photoStyle: msg.photoStyle,
+      laserColor: msg.laserColor,
+      laserSpeed: msg.laserSpeed,
+      audioDuration: msg.audioDuration
     };
   });
 
-  const totalHeight = curY - gap + bottomPad;
+  const totalHeight = curY + bottomPad;
   return { bubbles, totalHeight, canvasWidth };
 };
 
@@ -646,6 +694,80 @@ export const getCachedAvatarImage = (url: string): HTMLImageElement | null => {
   return null;
 };
 
+// ---------------------------------------------------------------------------
+// High-Reliability General Image Preloading for Photos & Canvas Recording
+// ---------------------------------------------------------------------------
+const chatImageCache = new Map<string, HTMLImageElement>();
+
+export const preloadChatImage = (url: string): Promise<HTMLImageElement | null> => {
+  if (!url) return Promise.resolve(null);
+
+  const cached = chatImageCache.get(url);
+  if (cached && cached.complete && cached.naturalWidth > 0) {
+    return Promise.resolve(cached);
+  }
+
+  const domImg = findLoadedImgInDOM(url);
+  if (domImg) {
+    chatImageCache.set(url, domImg);
+    return Promise.resolve(domImg);
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    if (url.startsWith('http') && typeof window !== 'undefined' && !url.startsWith(window.location.origin)) {
+      img.crossOrigin = 'anonymous';
+    }
+    img.onload = async () => {
+      try {
+        if ('decode' in img) await img.decode();
+      } catch {}
+      chatImageCache.set(url, img);
+      resolve(img);
+    };
+    img.onerror = () => {
+      if (url !== '/avatars/gaming_post.jpg') {
+        preloadChatImage('/avatars/gaming_post.jpg').then(resolve);
+      } else {
+        resolve(null);
+      }
+    };
+    img.src = url;
+    if (img.complete && img.naturalWidth > 0) {
+      chatImageCache.set(url, img);
+      resolve(img);
+    }
+  });
+};
+
+export const getCachedChatImage = (url: string): HTMLImageElement | null => {
+  if (!url) return null;
+  const cached = chatImageCache.get(url);
+  if (cached && cached.complete && cached.naturalWidth > 0) {
+    return cached;
+  }
+  const domImg = findLoadedImgInDOM(url);
+  if (domImg) {
+    chatImageCache.set(url, domImg);
+    return domImg;
+  }
+  preloadChatImage(url);
+  return null;
+};
+
+export const preloadAllMessagesAssets = async (messages: ChatMessage[], avatarUrl?: string): Promise<void> => {
+  const promises: Promise<any>[] = [];
+  if (avatarUrl) {
+    promises.push(preloadAvatarImage(avatarUrl));
+  }
+  messages.forEach((msg) => {
+    if (msg.type === 'IMAGE' && msg.imageResName) {
+      promises.push(preloadChatImage(msg.imageResName));
+    }
+  });
+  await Promise.all(promises);
+};
+
 /**
  * Draws a single pristine bubble with razor-sharp 2px border beam,
  * animated light sweep, corner love badges, and crisp typography.
@@ -710,6 +832,268 @@ export const drawBubbleToCanvas = (
     ctx.lineWidth = 1 * scale;
     ctx.stroke();
     ctx.restore();
+  }
+
+  // 0. SPECIAL MESSAGE TYPES: STICKER, AUDIO, and IMAGE
+  if (bubble.type === 'STICKER') {
+    ctx.save();
+    ctx.font = `${36 * scale}px "SamsungOneUI_4_Xmas", "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(bubble.text || '🔥', x + w / 2, y + h / 2);
+    ctx.restore();
+
+    if (bubble.reaction) {
+      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale);
+    }
+    return;
+  }
+
+  if (bubble.type === 'AUDIO') {
+    const rTL = 18 * scale;
+    const rTR = 18 * scale;
+    const rBR = isFromMe ? 4 * scale : 18 * scale;
+    const rBL = isFromMe ? 18 * scale : 4 * scale;
+    const audioPath = createRoundedRectPath(x, y, w, h, rTL, rTR, rBR, rBL);
+
+    ctx.save();
+    if (isFromMe) {
+      const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+      grad.addColorStop(0, '#7038F8');
+      grad.addColorStop(0.5, '#8A3FFC');
+      grad.addColorStop(1, '#9E27E8');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = '#262626';
+    }
+    ctx.fill(audioPath);
+    ctx.restore();
+
+    // Circular Play Button
+    const playCircleRadius = 15 * scale;
+    const playCircleX = x + 12 * scale + playCircleRadius;
+    const playCircleY = y + h / 2;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(playCircleX, playCircleY, playCircleRadius, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.fill();
+
+    // Play icon triangle
+    ctx.beginPath();
+    const triX = playCircleX + 0.5 * scale;
+    const triY = playCircleY;
+    const triSize = 5 * scale;
+    ctx.moveTo(triX - triSize * 0.7, triY - triSize);
+    ctx.lineTo(triX - triSize * 0.7, triY + triSize);
+    ctx.lineTo(triX + triSize, triY);
+    ctx.closePath();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.restore();
+
+    // Instagram Voice Waveform Bars
+    const waveformBars = [4, 8, 14, 18, 11, 7, 16, 22, 15, 9, 12, 19, 11, 6, 14, 9, 4];
+    const barWidth = 2.4 * scale;
+    const barGap = 2.2 * scale;
+    const startWaveX = playCircleX + playCircleRadius + 10 * scale;
+    const waveCenterY = y + h / 2;
+    const playedBarsCount = Math.floor(waveformBars.length * 0.38);
+
+    ctx.save();
+    waveformBars.forEach((bHeight, idx) => {
+      const bh = bHeight * scale * 0.85;
+      const bx = startWaveX + idx * (barWidth + barGap);
+      const by = waveCenterY - bh / 2;
+
+      ctx.beginPath();
+      const barR = 1.2 * scale;
+      const bPath = createRoundedRectPath(bx, by, barWidth, bh, barR, barR, barR, barR);
+      ctx.fillStyle = idx < playedBarsCount ? '#FFFFFF' : 'rgba(255, 255, 255, 0.45)';
+      ctx.fill(bPath);
+    });
+    ctx.restore();
+
+    // Duration (e.g. 0:15)
+    ctx.save();
+    ctx.font = `600 ${11 * scale}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(bubble.audioDuration || '0:15', x + w - 12 * scale, y + h / 2);
+    ctx.restore();
+
+    if (bubble.reaction) {
+      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale);
+    }
+    return;
+  }
+
+  if (bubble.type === 'IMAGE') {
+    const isLaser = bubble.photoStyle === 'LASER';
+    const laserColor = bubble.laserColor || '#8A3FFC';
+    const laserSpeed = bubble.laserSpeed || 3;
+    const isGradientLaser = laserColor === 'GRADIENT' || !laserColor.startsWith('#');
+    const outerRadius = 16 * scale;
+
+    const outerImgPath = createRoundedRectPath(x, y, w, h, outerRadius, outerRadius, outerRadius, outerRadius);
+
+    if (isLaser) {
+      // 1. Black base background for laser border
+      ctx.save();
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fill(outerImgPath);
+      ctx.restore();
+
+      // 2. Traveling Laser Light Beam
+      ctx.save();
+      ctx.clip(outerImgPath);
+
+      const revMs = (laserSpeed || 3) * 1000;
+      const rawAngle = ((timeMs % revMs) / revMs) * (Math.PI * 2);
+      const angle = isFromMe ? -rawAngle : rawAngle;
+
+      const conic = ctx.createConicGradient(angle, x + w / 2, y + h / 2);
+      if (isGradientLaser) {
+        conic.addColorStop(0, 'rgba(0,0,0,0)');
+        conic.addColorStop(0.75, 'rgba(0,0,0,0)');
+        conic.addColorStop(0.83, '#FCAF45');
+        conic.addColorStop(0.9, '#F56040');
+        conic.addColorStop(0.97, '#8A3FFC');
+        conic.addColorStop(1, '#FFFFFF');
+      } else {
+        conic.addColorStop(0, 'rgba(0,0,0,0)');
+        conic.addColorStop(0.75, 'rgba(0,0,0,0)');
+        conic.addColorStop(0.85, `${laserColor}25`);
+        conic.addColorStop(0.93, `${laserColor}cc`);
+        conic.addColorStop(0.97, laserColor);
+        conic.addColorStop(1, '#FFFFFF');
+      }
+
+      ctx.fillStyle = conic;
+      ctx.fillRect(x - 10 * scale, y - 10 * scale, w + 20 * scale, h + 20 * scale);
+      ctx.restore();
+
+      // 3. Inner clipped frame for the photo
+      const borderPad = 2.5 * scale;
+      const ix = x + borderPad;
+      const iy = y + borderPad;
+      const iw = w - borderPad * 2;
+      const ih = h - borderPad * 2;
+      const innerRadius = 13.5 * scale;
+
+      const innerImgPath = createRoundedRectPath(ix, iy, iw, ih, innerRadius, innerRadius, innerRadius, innerRadius);
+
+      ctx.save();
+      ctx.clip(innerImgPath);
+
+      ctx.fillStyle = '#1c1c1c';
+      ctx.fillRect(ix, iy, iw, ih);
+
+      const img = bubble.imageResName ? getCachedChatImage(bubble.imageResName) : null;
+      if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        const nw = img.naturalWidth;
+        const nh = img.naturalHeight;
+        const fit = bubble.imageFit || 'cover';
+
+        if (fit === 'cover') {
+          const imgAspect = nw / nh;
+          const frameAspect = iw / ih;
+          let sx = 0, sy = 0, sw = nw, sh = nh;
+
+          if (imgAspect > frameAspect) {
+            sw = nh * frameAspect;
+            sx = (nw - sw) / 2;
+          } else {
+            sh = nw / frameAspect;
+            sy = (nh - sh) / 2;
+          }
+          ctx.drawImage(img, sx, sy, sw, sh, ix, iy, iw, ih);
+        } else {
+          const imgAspect = nw / nh;
+          const frameAspect = iw / ih;
+          let dw = iw, dh = ih, dx = ix, dy = iy;
+          if (imgAspect > frameAspect) {
+            dh = iw / imgAspect;
+            dy = iy + (ih - dh) / 2;
+          } else {
+            dw = ih * imgAspect;
+            dx = ix + (iw - dw) / 2;
+          }
+          ctx.drawImage(img, dx, dy, dw, dh);
+        }
+      } else {
+        ctx.fillStyle = '#262626';
+        ctx.fillRect(ix, iy, iw, ih);
+        ctx.font = `${28 * scale}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🖼️', ix + iw / 2, iy + ih / 2);
+      }
+      ctx.restore();
+
+    } else {
+      // Normal Photo
+      ctx.save();
+      ctx.clip(outerImgPath);
+
+      ctx.fillStyle = '#262626';
+      ctx.fillRect(x, y, w, h);
+
+      const img = bubble.imageResName ? getCachedChatImage(bubble.imageResName) : null;
+      if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        const nw = img.naturalWidth;
+        const nh = img.naturalHeight;
+        const fit = bubble.imageFit || 'cover';
+
+        if (fit === 'cover') {
+          const imgAspect = nw / nh;
+          const frameAspect = w / h;
+          let sx = 0, sy = 0, sw = nw, sh = nh;
+
+          if (imgAspect > frameAspect) {
+            sw = nh * frameAspect;
+            sx = (nw - sw) / 2;
+          } else {
+            sh = nw / frameAspect;
+            sy = (nh - sh) / 2;
+          }
+          ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+        } else {
+          const imgAspect = nw / nh;
+          const frameAspect = w / h;
+          let dw = w, dh = h, dx = x, dy = y;
+          if (imgAspect > frameAspect) {
+            dh = w / imgAspect;
+            dy = y + (h - dh) / 2;
+          } else {
+            dw = h * imgAspect;
+            dx = x + (w - dw) / 2;
+          }
+          ctx.drawImage(img, dx, dy, dw, dh);
+        }
+      } else {
+        ctx.fillStyle = '#262626';
+        ctx.fillRect(x, y, w, h);
+        ctx.font = `${28 * scale}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🖼️', x + w / 2, y + h / 2);
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.lineWidth = 1 * scale;
+      ctx.stroke(outerImgPath);
+      ctx.restore();
+    }
+
+    if (bubble.reaction) {
+      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale);
+    }
+    return;
   }
 
   // Outer corner radii:
@@ -964,10 +1348,8 @@ export const captureBubblesScreenshot = async (
     } catch {}
   }
 
-  // Preload and decode avatar image before rendering
-  if (options.avatarUrl) {
-    await preloadAvatarImage(options.avatarUrl);
-  }
+  // Preload and decode avatar and message photos before rendering
+  await preloadAllMessagesAssets(messages, options.avatarUrl);
 
   const canvas = document.createElement('canvas');
   renderBubblesToCanvas(canvas, messages, performance.now(), options);

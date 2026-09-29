@@ -6,6 +6,7 @@ import {
   captureBubblesScreenshot,
   calculateBubblesColumnLayout,
   preloadAvatarImage,
+  preloadAllMessagesAssets,
   RenderBubblesOptions,
   MeasuredBubble
 } from '../utils/bubbleCanvasRenderer';
@@ -51,7 +52,10 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
 
   // Messages to record: defaults to all current chat messages, or dubai preset if chat empty
   const [messagesToRecord, setMessagesToRecord] = useState<ChatMessage[]>(() => {
-    const validChat = currentMessages.filter((m) => m.type === 'TEXT' && m.text.trim());
+    const validChat = currentMessages.filter((m) => {
+      if (m.type === 'IMAGE' || m.type === 'AUDIO' || m.type === 'STICKER') return true;
+      return Boolean(m.text && m.text.trim());
+    });
     if (validChat.length > 0) {
       return validChat;
     }
@@ -100,12 +104,10 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     cachedLayoutRef.current = calculateBubblesColumnLayout(ctx, messagesToRecord, renderOptions);
   }, [messagesToRecord, quality, emojiFont, speedOption, avatarUrl]);
 
-  // Preload avatar photo into memory & DOM cache immediately when modal mounts
+  // Preload avatar photo and message photos into memory & DOM cache immediately
   useEffect(() => {
-    if (avatarUrl) {
-      preloadAvatarImage(avatarUrl);
-    }
-  }, [avatarUrl]);
+    preloadAllMessagesAssets(messagesToRecord, avatarUrl);
+  }, [messagesToRecord, avatarUrl]);
 
   // Render frame to canvas using pre-computed layout (0ms layout overhead)
   const drawFrame = useCallback(
@@ -142,11 +144,9 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     if (!canvas) return;
 
     try {
-      // Ensure avatar photo is 100% preloaded before recording starts so frame 0 has the real logo
-      if (avatarUrl) {
-        await preloadAvatarImage(avatarUrl);
-      }
-      // Paint first frame with decoded avatar photo before capture stream starts
+      // Ensure avatar photo and all message photos are 100% preloaded before recording starts
+      await preloadAllMessagesAssets(messagesToRecord, avatarUrl);
+      // Paint first frame with decoded assets before capture stream starts
       drawFrame(performance.now());
 
       setRecordedVideoUrl(null);
@@ -697,7 +697,10 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
               <button
                 disabled={isRecording}
                 onClick={() => {
-                  const validChat = currentMessages.filter((m) => m.type === 'TEXT' && m.text.trim());
+                  const validChat = currentMessages.filter((m) => {
+                    if (m.type === 'IMAGE' || m.type === 'AUDIO' || m.type === 'STICKER') return true;
+                    return Boolean(m.text && m.text.trim());
+                  });
                   if (validChat.length > 0) {
                     setMessagesToRecord(validChat);
                   }
