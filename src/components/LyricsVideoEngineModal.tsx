@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ChatMessage, BubbleTheme } from '../types/chat';
 import { CloseIcon } from './InstagramIcons';
 import {
@@ -90,15 +90,18 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
 
   const speedMultiplier = speedOption === 'FAST' ? 1.25 : (speedOption === 'NORMAL' ? 1.0 : 0.75);
 
-  // Common render options (Scale 2.5 = 1080p Studio HD with 432 baseWidth, Scale 2 = 720p HD)
-  const renderOptions: RenderBubblesOptions = {
-    scale: quality === '1080P' ? 2.5 : 2,
-    baseWidth: 432,
-    emojiFont,
-    avatarUrl,
-    speedMultiplier,
-    globalBubbleSpacing
-  };
+  // Common render options memoized to prevent infinite re-render loops
+  const renderOptions = useMemo<RenderBubblesOptions>(
+    () => ({
+      scale: quality === '1080P' ? 2.5 : 2,
+      baseWidth: 432,
+      emojiFont,
+      avatarUrl,
+      speedMultiplier,
+      globalBubbleSpacing
+    }),
+    [quality, emojiFont, avatarUrl, speedMultiplier, globalBubbleSpacing]
+  );
 
   // Re-calculate layout only when messages or render options change (NEVER inside loop!)
   useEffect(() => {
@@ -107,7 +110,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     cachedLayoutRef.current = calculateBubblesColumnLayout(ctx, messagesToRecord, renderOptions);
-  }, [messagesToRecord, quality, emojiFont, speedOption, avatarUrl, globalBubbleSpacing]);
+  }, [messagesToRecord, renderOptions]);
 
   // Preload avatar photo and message photos into memory & DOM cache immediately
   useEffect(() => {
@@ -130,24 +133,26 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     [messagesToRecord, renderOptions]
   );
 
-  // Live preview loop when not recording (paced at target FPS to save CPU)
+  // Live preview loop ONLY when not recording and NOT previewing the recorded video
   useEffect(() => {
+    if (isRecording || Boolean(recordedVideoUrl)) {
+      return; // Do NOT run loop while recording or while viewing video preview!
+    }
+
     let animId: number;
     let lastPreviewTime = 0;
     const previewInterval = 1000 / fpsOption;
 
     const loop = (now: number) => {
-      if (!isRecording) {
-        if (now - lastPreviewTime >= previewInterval) {
-          drawFrame(now);
-          lastPreviewTime = now;
-        }
+      if (now - lastPreviewTime >= previewInterval) {
+        drawFrame(now);
+        lastPreviewTime = now;
       }
       animId = requestAnimationFrame(loop);
     };
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [isRecording, drawFrame, fpsOption]);
+  }, [isRecording, recordedVideoUrl, drawFrame, fpsOption]);
 
   // Safe cleanup on unmount: stop recording & cancel animation frames immediately
   useEffect(() => {
@@ -211,10 +216,10 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
       }
       setRecordedMimeType(chosenMime);
 
-      // Optimal 8 Mbps for 1080p, 5 Mbps for 720p (flawless crystal-clear video, zero encoder hang!)
+      // Optimal 4 Mbps for 1080p, 2.5 Mbps for 720p (flawless crystal-clear video, zero encoder hang or VRAM overflow!)
       const recorder = new MediaRecorder(stream, {
         mimeType: chosenMime,
-        videoBitsPerSecond: quality === '1080P' ? 8000000 : 5000000
+        videoBitsPerSecond: quality === '1080P' ? 4000000 : 2500000
       });
 
       recorder.ondataavailable = (e) => {
@@ -351,7 +356,14 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
         </div>
 
         <button
-          onClick={onDismiss}
+          onClick={() => {
+            if (recordedVideoUrl) {
+              try {
+                URL.revokeObjectURL(recordedVideoUrl);
+              } catch (_) {}
+            }
+            onDismiss();
+          }}
           disabled={isRecording}
           style={{
             background: 'none',
@@ -412,6 +424,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
         {/* Video Player when Recorded */}
         {recordedVideoUrl && (
           <video
+            key={recordedVideoUrl}
             src={recordedVideoUrl}
             autoPlay
             loop
@@ -421,8 +434,10 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
             style={{
               width: '100%',
               height: 'auto',
+              maxHeight: '62vh',
               backgroundColor: '#000000',
-              display: 'block'
+              display: 'block',
+              borderRadius: 12
             }}
           />
         )}
@@ -577,7 +592,16 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
             </a>
 
             <button
-              onClick={() => setRecordedVideoUrl(null)}
+              onClick={() => {
+                if (recordedVideoUrl) {
+                  try {
+                    URL.revokeObjectURL(recordedVideoUrl);
+                  } catch (_) {}
+                }
+                setRecordedVideoUrl(null);
+                setProgress(0);
+                setElapsedTime(0);
+              }}
               style={{
                 width: '100%',
                 height: 38,
