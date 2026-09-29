@@ -34,7 +34,9 @@ interface BackendScreenProps {
     photoStyle?: PhotoBorderStyle,
     imageFit?: 'cover' | 'contain',
     laserColor?: string,
-    laserSpeed?: number
+    laserSpeed?: number,
+    customSpacing?: number,
+    audioDuration?: string
   ) => void;
   onDeleteMessage: (id: string) => void;
   onClearAllMessages: () => void;
@@ -44,6 +46,7 @@ interface BackendScreenProps {
   globalBubbleSpacing?: number;
   onUpdateGlobalSpacing?: (spacing: number) => void;
   onResetAllCustomGaps?: () => void;
+  onReorderMessages?: (newMessages: ChatMessage[]) => void;
   onToast: (msg: string) => void;
 }
 
@@ -61,6 +64,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
   globalBubbleSpacing = 4,
   onUpdateGlobalSpacing,
   onResetAllCustomGaps,
+  onReorderMessages,
   onToast
 }) => {
   const [selectedTab, setSelectedTab] = useState<0 | 1>(0); // 0: Profile, 1: Messages
@@ -116,6 +120,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
   const [editingMsgTheme, setEditingMsgTheme] = useState<BubbleTheme>('CLASSIC');
   const [editingMsgEmojiFont, setEditingMsgEmojiFont] = useState('');
   const [editingMsgReaction, setEditingMsgReaction] = useState('');
+  const [editingMsgSpacing, setEditingMsgSpacing] = useState<number | undefined>(undefined);
 
   const themes: { key: BubbleTheme; label: string }[] = [
     { key: 'CLASSIC', label: 'Normal' },
@@ -124,6 +129,17 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
     { key: 'NEON_CYBER', label: '⚡ Cyber' },
     { key: 'GOLDEN_LUXE', label: '✨ Luxe' }
   ];
+
+  const handleMoveMessage = (index: number, direction: 'UP' | 'DOWN') => {
+    const targetIndex = direction === 'UP' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= messagesList.length) return;
+    const reordered = [...messagesList];
+    const temp = reordered[index];
+    reordered[index] = reordered[targetIndex];
+    reordered[targetIndex] = temp;
+    onReorderMessages?.(reordered);
+    onToast(`Message moved ${direction.toLowerCase()}!`);
+  };
 
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
@@ -181,6 +197,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
     setEditingMsgTheme(msg.theme || 'CLASSIC');
     setEditingMsgEmojiFont(msg.emojiFont || '');
     setEditingMsgReaction(msg.reaction || '');
+    setEditingMsgSpacing(msg.customSpacing);
   };
 
   const saveEditedMessage = () => {
@@ -192,7 +209,14 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
         editingMsgIsMe,
         editingMsgTheme,
         editingMsgEmojiFont || undefined,
-        editingMsgReaction || undefined
+        editingMsgReaction || undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        editingMsgSpacing
       );
       setEditingMsgId(null);
       onToast('Message edited successfully!');
@@ -1026,7 +1050,7 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {messagesList.map((msg) => (
+              {messagesList.map((msg, idx) => (
                 <div
                   key={msg.id}
                   style={{
@@ -1078,6 +1102,19 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
                             {msg.theme}
                           </span>
                         )}
+                        {msg.customSpacing !== undefined && (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                              color: '#A8A8A8',
+                              fontSize: 10,
+                              padding: '1px 5px',
+                              borderRadius: 4
+                            }}
+                          >
+                            ↕ {msg.customSpacing}px
+                          </span>
+                        )}
                       </div>
                       <div
                         style={{
@@ -1094,7 +1131,43 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 8 }}>
+                    {/* Move Up */}
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => handleMoveMessage(idx, 'UP')}
+                      title="Move Up"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: idx === 0 ? '#383838' : '#A8A8A8',
+                        cursor: idx === 0 ? 'default' : 'pointer',
+                        padding: '4px',
+                        fontSize: 13,
+                        lineHeight: 1
+                      }}
+                    >
+                      ▲
+                    </button>
+                    {/* Move Down */}
+                    <button
+                      type="button"
+                      disabled={idx === messagesList.length - 1}
+                      onClick={() => handleMoveMessage(idx, 'DOWN')}
+                      title="Move Down"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: idx === messagesList.length - 1 ? '#383838' : '#A8A8A8',
+                        cursor: idx === messagesList.length - 1 ? 'default' : 'pointer',
+                        padding: '4px',
+                        fontSize: 13,
+                        lineHeight: 1
+                      }}
+                    >
+                      ▼
+                    </button>
                     <button
                       onClick={() => openEditMessage(msg)}
                       style={{
@@ -1288,6 +1361,57 @@ export const BackendScreen: React.FC<BackendScreenProps> = ({
                   );
                 })}
               </div>
+            </div>
+
+            {/* Gap Below Bubble (Custom Spacing) */}
+            <div style={{ marginTop: 14, marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 600 }}>
+                  ↕ Gap Below Bubble:
+                </label>
+                <span style={{ color: '#0095F6', fontSize: 12, fontWeight: 700 }}>
+                  {editingMsgSpacing !== undefined ? `${editingMsgSpacing}px` : `${globalBubbleSpacing}px (Global Default)`}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                {[
+                  { label: 'Global', val: undefined },
+                  { label: '0px', val: 0 },
+                  { label: '4px', val: 4 },
+                  { label: '12px', val: 12 },
+                  { label: '24px', val: 24 }
+                ].map((sp) => (
+                  <button
+                    key={sp.label}
+                    type="button"
+                    onClick={() => setEditingMsgSpacing(sp.val)}
+                    style={{
+                      flex: 1,
+                      padding: '5px 4px',
+                      borderRadius: 6,
+                      backgroundColor: editingMsgSpacing === sp.val ? '#0095F6' : '#262626',
+                      color: editingMsgSpacing === sp.val ? '#FFFFFF' : '#A8A8A8',
+                      border: 'none',
+                      fontSize: 11,
+                      fontWeight: editingMsgSpacing === sp.val ? 700 : 500,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {sp.label}
+                  </button>
+                ))}
+              </div>
+              {editingMsgSpacing !== undefined && (
+                <input
+                  type="range"
+                  min={0}
+                  max={60}
+                  step={1}
+                  value={editingMsgSpacing}
+                  onChange={(e) => setEditingMsgSpacing(Number(e.target.value))}
+                  style={{ width: '100%', height: 6, accentColor: '#0095F6', cursor: 'pointer' }}
+                />
+              )}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>

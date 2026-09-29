@@ -19,6 +19,7 @@ interface ChatInputBarProps {
   onCameraClick: () => void;
   onMicClick: () => void;
   onGalleryClick: (file?: File) => void;
+  onStickerClick?: () => void;
   onPlusClick: () => void;
   isBlocked: boolean;
   blockedHandle?: string;
@@ -37,6 +38,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   onCameraClick,
   onMicClick,
   onGalleryClick,
+  onStickerClick,
   onPlusClick,
   isBlocked,
   blockedHandle,
@@ -397,8 +399,8 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
               {/* 3. Sticker (Smiley with peeled corner) */}
               <button
                 type="button"
-                onClick={onPlusClick}
-                title="Sticker"
+                onClick={onStickerClick || onPlusClick}
+                title="Send Sticker"
                 style={{
                   background: 'none',
                   border: 'none',

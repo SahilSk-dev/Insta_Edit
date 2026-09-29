@@ -169,7 +169,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                     style={{
                       width: '100%',
                       height: height ? `${height}px` : 'auto',
-                      maxHeight: height ? `${height}px` : 260,
+                      maxHeight: height ? `${height}px` : 380,
                       objectFit: fit,
                       display: 'block'
                     }}

@@ -33,7 +33,7 @@ const compressImageFile = (file: File): Promise<string> => {
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_DIM = 1200;
+        const MAX_DIM = 800;
         let width = img.naturalWidth || img.width;
         let height = img.naturalHeight || img.height;
         if (width > MAX_DIM || height > MAX_DIM) {
@@ -51,7 +51,7 @@ const compressImageFile = (file: File): Promise<string> => {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.85));
+          resolve(canvas.toDataURL('image/jpeg', 0.80));
         } else {
           resolve((e.target?.result as string) || '/avatars/gaming_post.jpg');
         }
@@ -104,9 +104,9 @@ export const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       const saved = localStorage.getItem('insta_chat_messages');
-      if (saved) {
+      if (saved !== null) {
         const parsed: ChatMessage[] = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
@@ -266,6 +266,28 @@ export const App: React.FC = () => {
     };
 
     setMessages((prev) => [...prev, newMsg]);
+
+    // Intelligent auto-reply simulation when enabled in backend
+    if (profile.autoReplyEnabled && isFromMe && !profile.isBlocked) {
+      setTimeout(() => {
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          const replyText = sahilResponses[responseIndex % sahilResponses.length];
+          setResponseIndex((r) => r + 1);
+          const replyMsg: ChatMessage = {
+            id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            text: replyText,
+            isFromMe: false,
+            timestamp: getCurrentTime(),
+            type: 'TEXT',
+            theme: 'CLASSIC',
+            orderIndex: Date.now()
+          };
+          setMessages((prev) => [...prev, replyMsg]);
+        }, 1300);
+      }, 700);
+    }
   };
 
   // Edit message
@@ -416,6 +438,7 @@ export const App: React.FC = () => {
           globalBubbleSpacing={globalBubbleSpacing}
           onUpdateGlobalSpacing={(sp) => setGlobalBubbleSpacing(sp)}
           onResetAllCustomGaps={handleResetAllCustomGaps}
+          onReorderMessages={(reordered) => setMessages(reordered)}
           onToast={showToast}
         />
       ) : (
@@ -647,8 +670,14 @@ export const App: React.FC = () => {
                   handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
                 }
               }}
+              onStickerClick={() => {
+                const popularStickers = ['🔥', '❤️‍🔥', '🥰', '😂', '🫰', '✨', '💀', '🎉'];
+                const randomSticker = popularStickers[Math.floor(Math.random() * popularStickers.length)];
+                handleSendMessage(randomSticker, activeSender === 'ME', 'STICKER');
+                showToast(`Sent sticker: ${randomSticker}`);
+              }}
               onPlusClick={() => {
-                handleSendMessage('', activeSender === 'ME', 'AUDIO', undefined, '0:04');
+                setShowCaptureModeModal(true);
               }}
               isBlocked={profile.isBlocked}
               blockedHandle={profile.handle}

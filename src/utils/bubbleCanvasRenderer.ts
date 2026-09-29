@@ -206,6 +206,7 @@ export interface MeasuredBubble {
   fontStack: string;
   reaction?: string;
   customSpacing?: number;
+  emojiFont?: string;
 
   // Photo / Image properties
   imageResName?: string;
@@ -280,9 +281,9 @@ export const calculateBubblesColumnLayout = (
         const cachedImg = msg.imageResName ? getCachedChatImage(msg.imageResName) : null;
         if (cachedImg && cachedImg.naturalWidth > 0 && cachedImg.naturalHeight > 0) {
           const naturalRatio = cachedImg.naturalHeight / cachedImg.naturalWidth;
-          h = Math.min(Math.round(w * naturalRatio), 260 * scale);
+          h = Math.min(Math.round(w * naturalRatio), 380 * scale);
         } else {
-          h = Math.min(Math.round(w * 1.05), 260 * scale);
+          h = Math.min(Math.round(w * 1.05), 380 * scale);
         }
       }
     } else if (type === 'AUDIO') {
@@ -422,7 +423,8 @@ export const calculateBubblesColumnLayout = (
       photoStyle: msg.photoStyle,
       laserColor: msg.laserColor,
       laserSpeed: msg.laserSpeed,
-      audioDuration: msg.audioDuration
+      audioDuration: msg.audioDuration,
+      emojiFont: msg.emojiFont || options.emojiFont || 'SamsungOneUI_4_Xmas'
     };
   });
 
@@ -583,7 +585,8 @@ export const drawReactionBadgeOnCanvas = (
   h: number,
   isFromMe: boolean,
   isThemed: boolean,
-  scale: number
+  scale: number,
+  emojiFont?: string
 ) => {
   const rxSize = 22 * scale;
   const rxRadius = rxSize / 2;
@@ -606,7 +609,8 @@ export const drawReactionBadgeOnCanvas = (
   ctx.stroke();
 
   // 3. Draw emoji inside badge
-  ctx.font = `${11.5 * scale}px "SamsungOneUI_4_Xmas", "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+  const fontFam = emojiFont ? `"${emojiFont}", ` : '';
+  ctx.font = `${11.5 * scale}px ${fontFam}"SamsungOneUI_4_Xmas", "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(reaction, rxX + rxRadius, rxY + rxRadius + 0.5 * scale);
@@ -857,14 +861,15 @@ export const drawBubbleToCanvas = (
   // 0. SPECIAL MESSAGE TYPES: STICKER, AUDIO, and IMAGE
   if (bubble.type === 'STICKER') {
     ctx.save();
-    ctx.font = `${36 * scale}px "SamsungOneUI_4_Xmas", "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    const stickerFont = bubble.emojiFont ? `"${bubble.emojiFont}", ` : '';
+    ctx.font = `${36 * scale}px ${stickerFont}"SamsungOneUI_4_Xmas", "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(bubble.text || '🔥', x + w / 2, y + h / 2);
     ctx.restore();
 
     if (bubble.reaction) {
-      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale);
+      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale, bubble.emojiFont);
     }
     return;
   }
@@ -935,17 +940,17 @@ export const drawBubbleToCanvas = (
     });
     ctx.restore();
 
-    // Duration (e.g. 0:15)
+    // Duration (e.g. 0:04 default matching DOM)
     ctx.save();
     ctx.font = `600 ${11 * scale}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(bubble.audioDuration || '0:15', x + w - 12 * scale, y + h / 2);
+    ctx.fillText(bubble.audioDuration || '0:04', x + w - 12 * scale, y + h / 2);
     ctx.restore();
 
     if (bubble.reaction) {
-      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale);
+      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale, bubble.emojiFont);
     }
     return;
   }
@@ -1111,7 +1116,7 @@ export const drawBubbleToCanvas = (
     }
 
     if (bubble.reaction) {
-      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale);
+      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale, bubble.emojiFont);
     }
     return;
   }
@@ -1163,7 +1168,7 @@ export const drawBubbleToCanvas = (
     ctx.restore();
 
     if (bubble.reaction) {
-      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale);
+      drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, false, scale, bubble.emojiFont);
     }
     return;
   }
@@ -1305,7 +1310,7 @@ export const drawBubbleToCanvas = (
   ctx.restore();
 
   if (bubble.reaction) {
-    drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, true, scale);
+    drawReactionBadgeOnCanvas(ctx, bubble.reaction, x, y, w, h, isFromMe, true, scale, bubble.emojiFont);
   }
 };
 

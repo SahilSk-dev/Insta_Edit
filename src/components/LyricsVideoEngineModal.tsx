@@ -148,6 +148,20 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     return () => cancelAnimationFrame(animId);
   }, [isRecording, drawFrame, fpsOption]);
 
+  // Safe cleanup on unmount: stop recording & cancel animation frames immediately
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (_) {}
+      }
+    };
+  }, []);
+
   // Start live recording of the animated bubbles with deterministic 40 FPS engine
   const handleStartRecording = async () => {
     const canvas = canvasRef.current;
