@@ -27,6 +27,7 @@ export interface ChatMessage {
   orderIndex: number;
   emojiFont?: string;
   reaction?: string;
+  customSpacing?: number;
 }
 
 export interface ChatProfile {

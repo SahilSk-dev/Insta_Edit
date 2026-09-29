@@ -6,20 +6,24 @@ import { CropAvatarModal } from './CropAvatarModal';
 
 interface ChatHeaderProps {
   profile: ChatProfile;
+  globalBubbleSpacing?: number;
   onSafetyTipsClick: () => void;
   onBlockClick: () => void;
   onProfileClick: () => void;
   onChangeAvatar: () => void;
   onDirectAvatarUpload?: (dataUrl: string) => void;
+  onOpenSpacingModal?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
   profile,
+  globalBubbleSpacing = 4,
   onSafetyTipsClick,
   onBlockClick,
   onProfileClick,
   onChangeAvatar,
-  onDirectAvatarUpload
+  onDirectAvatarUpload,
+  onOpenSpacingModal
 }) => {
   const avatarUrl = getAvatarUrl(profile.avatarName);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -127,27 +131,53 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         {profile.mutualFollowText}
       </div>
 
-      {/* Native Instagram Android: View profile button */}
-      <button
-        onClick={onProfileClick}
-        style={{
-          backgroundColor: '#262626',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          borderRadius: 8,
-          padding: '6px 16px',
-          color: '#FFFFFF',
-          fontSize: 14,
-          fontWeight: 600,
-          cursor: 'pointer',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          userSelect: 'none',
-          marginBottom: 8
-        }}
-      >
-        View profile
-      </button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        {/* Native Instagram Android: View profile button */}
+        <button
+          onClick={onProfileClick}
+          style={{
+            backgroundColor: '#262626',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: 8,
+            padding: '6px 16px',
+            color: '#FFFFFF',
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            userSelect: 'none'
+          }}
+        >
+          View profile
+        </button>
+
+        {/* Global Bubble Spacing Pill */}
+        {onOpenSpacingModal && (
+          <button
+            onClick={onOpenSpacingModal}
+            title="Adjust spacing / distance between all chat bubbles"
+            style={{
+              backgroundColor: '#1E1E1E',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              color: '#D4D4D4',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              userSelect: 'none'
+            }}
+          >
+            <span>↕ Gap:</span>
+            <span style={{ color: '#0095F6', fontWeight: 700 }}>{globalBubbleSpacing}px</span>
+          </button>
+        )}
+      </div>
 
       {/* Interactive Crop Popup Modal */}
       {pendingCropImage && (

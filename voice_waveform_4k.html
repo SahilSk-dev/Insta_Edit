@@ -319,10 +319,10 @@
     <div class="tool-group">
       <label for="patternSelect" style="color:#A8A8A8; font-size:12px;">Voice Pattern:</label>
       <select id="patternSelect">
-        <option value="user_voice" selected>My Voice Recording (আমার আসল ভয়েস)</option>
-        <option value="natural">Studio Natural Speech (ন্যাচারাল ক্যাডেন্স)</option>
-        <option value="casual">Casual Voice (ছোট কথা)</option>
-        <option value="flat_original">Continuous / Dense (আগের ইমেজ)</option>
+        <option value="user_voice" selected>My Voice Recording (Authentic User Voice)</option>
+        <option value="natural">Studio Natural Speech (Cadence)</option>
+        <option value="casual">Casual Voice (Conversational)</option>
+        <option value="flat_original">Continuous / Dense (Flat Waveform)</option>
       </select>
     </div>
 
@@ -430,19 +430,19 @@
      */
     const WAVEFORM_PRESETS = {
       'user_voice': {
-        name: 'My Voice Recording (আমার আসল ভয়েস)',
+        name: 'My Voice Recording (Authentic User Voice)',
         bars: [12, 18, 56, 83, 93, 178, 181, 181, 181, 181, 183, 169, 178, 184, 148, 181, 145, 142, 178, 104, 181, 174, 181, 172, 116, 154, 151, 169, 169]
       },
       'natural': {
-        name: 'Studio Natural Speech (ন্যাচারাল ক্যাডেন্স)',
+        name: 'Studio Natural Speech (Cadence)',
         bars: [14, 14, 38, 78, 122, 88, 42, 18, 14, 46, 98, 148, 172, 138, 92, 118, 158, 112, 58, 22, 14, 42, 98, 132, 152, 108, 62, 26, 14]
       },
       'casual': {
-        name: 'Casual Voice (ছোট কথা)',
+        name: 'Casual Voice (Conversational)',
         bars: [14, 14, 28, 64, 108, 144, 98, 42, 16, 14, 34, 76, 128, 160, 114, 52, 18, 14, 14, 28, 70, 118, 140, 96, 50, 24, 14, 14, 14]
       },
       'flat_original': {
-        name: 'Continuous / Dense (আগের ইমেজ)',
+        name: 'Continuous / Dense (Flat Waveform)',
         bars: [14, 14, 81, 103, 104, 99, 113, 104, 107, 114, 93, 107, 108, 107, 104, 105, 119, 97, 105, 100, 117, 107, 105, 97, 119, 109, 163, 110, 184]
       }
     };

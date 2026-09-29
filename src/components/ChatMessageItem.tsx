@@ -9,6 +9,7 @@ interface ChatMessageItemProps {
   senderName: string;
   avatarName: string;
   chatEmojiFont?: string;
+  globalSpacing?: number;
   onAvatarClick: () => void;
   onMessageClick: (message: ChatMessage) => void;
 }
@@ -18,6 +19,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   senderName,
   avatarName,
   chatEmojiFont,
+  globalSpacing = 4,
   onAvatarClick,
   onMessageClick
 }) => {
@@ -27,6 +29,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   const fontStack = `system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Nirmala UI", "Kohinoor Bangla", "Noto Sans Bengali", Helvetica, Arial, '${effectiveEmojiFont}', "Noto Color Emoji Custom", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
 
   const isThemed = Boolean(message.theme && message.theme !== 'CLASSIC');
+  const effectiveSpacing = message.customSpacing !== undefined ? message.customSpacing : globalSpacing;
 
   return (
     <div
@@ -37,9 +40,10 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         padding: isMe
           ? (isThemed ? '3.5px 8px 3.5px 14px' : '2px 8px 2px 14px')
           : (isThemed ? '3.5px 14px 3.5px 8px' : '2px 14px 2px 8px'),
-        marginBottom: message.reaction ? 8 : 0,
+        marginBottom: message.reaction ? Math.max(effectiveSpacing, 8) : effectiveSpacing,
         width: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        transition: 'margin-bottom 0.15s ease'
       }}
     >
       {/* Received avatar */}

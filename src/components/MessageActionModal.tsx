@@ -7,6 +7,7 @@ import { EmojiFontPreviewDropdown } from './EmojiFontPreviewDropdown';
 interface MessageActionModalProps {
   message: ChatMessage;
   contactName?: string;
+  globalSpacing?: number;
   onEditMessage: (
     id: string,
     newText: string,
@@ -20,7 +21,8 @@ interface MessageActionModalProps {
     photoStyle?: PhotoBorderStyle,
     imageFit?: 'cover' | 'contain',
     laserColor?: string,
-    laserSpeed?: number
+    laserSpeed?: number,
+    customSpacing?: number
   ) => void;
   onDeleteMessage: (id: string) => void;
   onReactEmoji: (emoji: string) => void;
@@ -30,6 +32,7 @@ interface MessageActionModalProps {
 export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   message,
   contactName = 'Sahil',
+  globalSpacing = 4,
   onEditMessage,
   onDeleteMessage,
   onReactEmoji,
@@ -43,6 +46,14 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   const [selectedTheme, setSelectedTheme] = useState<BubbleTheme>(message.theme || 'CLASSIC');
   const [selectedEmojiFont, setSelectedEmojiFont] = useState<string>(message.emojiFont || '');
   const [selectedReaction, setSelectedReaction] = useState<string>(message.reaction || '');
+
+  // Individual Bubble Spacing Below (This specific message)
+  const [bubbleSpacing, setBubbleSpacing] = useState<number>(
+    message.customSpacing !== undefined ? message.customSpacing : globalSpacing
+  );
+  const [useCustomSpacing, setUseCustomSpacing] = useState<boolean>(
+    message.customSpacing !== undefined
+  );
 
   // Photo size & style states (Normal by default, as requested)
   const [photoWidth, setPhotoWidth] = useState<number>(message.imageWidth || 220);
@@ -270,7 +281,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                 {/* 1. Style Selection (Normal vs Laser Light) */}
                 <div>
                   <div style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-                    Photo Edge Style (বর্ডার স্টাইল):
+                    Photo Border Style:
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     <button
@@ -291,7 +302,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                       }}
                     >
                       <span style={{ fontSize: 13.5, fontWeight: 700 }}>🔘 Normal Style</span>
-                      <span style={{ fontSize: 10.5, color: '#A8A8A8' }}>সাধারণ ইন্সটাগ্রাম বর্ডার (ডিফল্ট)</span>
+                      <span style={{ fontSize: 10.5, color: '#A8A8A8' }}>Classic Instagram Border (Default)</span>
                     </button>
 
                     <button
@@ -313,7 +324,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     >
                       <span style={{ fontSize: 13.5, fontWeight: 700 }}>⚡ Laser Light</span>
                       <span style={{ fontSize: 10.5, color: photoBorderStyle === 'LASER' ? '#00F0FF' : '#A8A8A8' }}>
-                        ঘুরন্ত লেজার লাইট
+                        Rotating Laser Glow
                       </span>
                     </button>
                   </div>
@@ -330,7 +341,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     }}
                   >
                     <div style={{ color: '#00F0FF', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>
-                      Laser Color (লেজার কালার):
+                      Laser Beam Color:
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                       {[
@@ -400,7 +411,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                     <label style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 600 }}>
-                      Width (প্রস্থ): {photoWidth}px
+                      Width: {photoWidth}px
                     </label>
                     <div style={{ display: 'flex', gap: 4 }}>
                       {[160, 220, 280, 340].map((w) => (
@@ -438,7 +449,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                     <label style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 600 }}>
-                      Height (উচ্চতা): {isAutoHeight ? 'Auto (স্বাভাবিক রেশিও)' : `${photoHeight}px`}
+                      Height: {isAutoHeight ? 'Auto (Natural Ratio)' : `${photoHeight}px`}
                     </label>
                     <button
                       type="button"
@@ -541,7 +552,8 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                       photoBorderStyle,
                       photoFit,
                       laserColor,
-                      laserSpeed
+                      laserSpeed,
+                      useCustomSpacing ? bubbleSpacing : undefined
                     );
                     onDismiss();
                   }}
@@ -558,14 +570,14 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     boxShadow: '0 2px 10px rgba(0, 149, 246, 0.4)'
                   }}
                 >
-                  Save Photo Size & Style (সেভ করুন)
+                  Save Photo Size & Style
                 </button>
               </div>
             ) : (
               <>
                 {/* Quick Apply Theme / Overlay */}
                 <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-                  Lyrics / Overlay Effects (Projapoti, Hearts, Neon):
+                  Lyrics / Overlay Effects (Butterfly, Hearts, Cyber, Luxe):
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
                   {themes.map((thm) => {
@@ -574,7 +586,22 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                       <button
                         key={thm.key}
                         onClick={() => {
-                          onEditMessage(message.id, message.text, message.timestamp, message.isFromMe, thm.key);
+                          onEditMessage(
+                            message.id,
+                            message.text,
+                            message.timestamp,
+                            message.isFromMe,
+                            thm.key,
+                            message.emojiFont,
+                            message.reaction,
+                            photoWidth,
+                            isAutoHeight ? undefined : photoHeight,
+                            photoBorderStyle,
+                            photoFit,
+                            laserColor,
+                            laserSpeed,
+                            useCustomSpacing ? bubbleSpacing : undefined
+                          );
                           onDismiss();
                         }}
                         style={{
@@ -633,6 +660,142 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                 </div>
               </>
             )}
+
+            {/* Individual Bubble Spacing Below (This specific message) */}
+            <div
+              style={{
+                backgroundColor: '#1E1E1E',
+                borderRadius: 14,
+                padding: '12px 14px',
+                marginBottom: 16,
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>↕ Gap Below Bubble:</span>
+                  <span style={{ color: '#0095F6', fontWeight: 700 }}>
+                    {useCustomSpacing ? `${bubbleSpacing}px (Custom)` : `${globalSpacing ?? 4}px (Global Default)`}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (useCustomSpacing) {
+                      setUseCustomSpacing(false);
+                      setBubbleSpacing(globalSpacing ?? 4);
+                      onEditMessage(
+                        message.id,
+                        message.text,
+                        message.timestamp,
+                        message.isFromMe,
+                        message.theme,
+                        message.emojiFont,
+                        message.reaction,
+                        photoWidth,
+                        isAutoHeight ? undefined : photoHeight,
+                        photoBorderStyle,
+                        photoFit,
+                        laserColor,
+                        laserSpeed,
+                        undefined // Reset to global
+                      );
+                    } else {
+                      setUseCustomSpacing(true);
+                    }
+                  }}
+                  style={{
+                    padding: '3px 9px',
+                    borderRadius: 6,
+                    backgroundColor: useCustomSpacing ? '#262626' : '#0095F6',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {useCustomSpacing ? 'Reset to Global' : 'Set Custom'}
+                </button>
+              </div>
+
+              {useCustomSpacing && (
+                <>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                    {[
+                      { label: '0px (Attached)', val: 0 },
+                      { label: '4px (Normal)', val: 4 },
+                      { label: '12px (Medium)', val: 12 },
+                      { label: '24px (Large)', val: 24 }
+                    ].map((sp) => (
+                      <button
+                        key={sp.label}
+                        type="button"
+                        onClick={() => {
+                          setBubbleSpacing(sp.val);
+                          onEditMessage(
+                            message.id,
+                            message.text,
+                            message.timestamp,
+                            message.isFromMe,
+                            message.theme,
+                            message.emojiFont,
+                            message.reaction,
+                            photoWidth,
+                            isAutoHeight ? undefined : photoHeight,
+                            photoBorderStyle,
+                            photoFit,
+                            laserColor,
+                            laserSpeed,
+                            sp.val
+                          );
+                        }}
+                        style={{
+                          padding: '4px 6px',
+                          borderRadius: 6,
+                          backgroundColor: bubbleSpacing === sp.val ? '#0095F6' : '#262626',
+                          color: bubbleSpacing === sp.val ? '#FFFFFF' : '#A8A8A8',
+                          border: 'none',
+                          fontSize: 10.5,
+                          cursor: 'pointer',
+                          flex: 1
+                        }}
+                      >
+                        {sp.label}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={60}
+                    step={2}
+                    value={bubbleSpacing}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setBubbleSpacing(val);
+                      onEditMessage(
+                        message.id,
+                        message.text,
+                        message.timestamp,
+                        message.isFromMe,
+                        message.theme,
+                        message.emojiFont,
+                        message.reaction,
+                        photoWidth,
+                        isAutoHeight ? undefined : photoHeight,
+                        photoBorderStyle,
+                        photoFit,
+                        laserColor,
+                        laserSpeed,
+                        val
+                      );
+                    }}
+                    style={{ width: '100%', accentColor: '#0095F6', cursor: 'pointer' }}
+                  />
+                </>
+              )}
+            </div>
 
             {/* Actions list */}
             <div>
@@ -731,7 +894,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: '#8E8E93', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Live Preview (হুবহু লাইভ প্রিভিউ)
+                  Live Preview
                 </span>
                 <span style={{ color: '#0095F6', fontSize: 11, fontWeight: 500 }}>
                   {selectedTheme === 'CLASSIC' ? 'Classic' : selectedTheme} · {selectedEmojiFont || 'Chat Font'}
@@ -936,11 +1099,11 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               label="Message Emoji Style (Live Preview)"
             />
 
-            {/* Bubble Reaction (প্রতিক্রিয়া) Selector */}
+            {/* Bubble Reaction Selector */}
             <div style={{ marginTop: 14, marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <label style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 500 }}>
-                  Bubble Reaction (প্রতিক্রিয়া)
+                  Bubble Reaction
                 </label>
                 {selectedReaction && (
                   <button
@@ -1002,6 +1165,58 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               </div>
             </div>
 
+            {/* Individual Bubble Spacing in Edit Mode */}
+            <div
+              style={{
+                backgroundColor: '#1E1E1E',
+                borderRadius: 12,
+                padding: '12px 14px',
+                marginTop: 10,
+                marginBottom: 16,
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ color: '#FFFFFF', fontSize: 12.5, fontWeight: 600 }}>
+                  ↕ Gap Below Bubble: <span style={{ color: '#0095F6' }}>{useCustomSpacing ? `${bubbleSpacing}px` : `${globalSpacing ?? 4}px (Default)`}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (useCustomSpacing) {
+                      setUseCustomSpacing(false);
+                      setBubbleSpacing(globalSpacing ?? 4);
+                    } else {
+                      setUseCustomSpacing(true);
+                    }
+                  }}
+                  style={{
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    backgroundColor: useCustomSpacing ? '#262626' : '#0095F6',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {useCustomSpacing ? 'Use Global' : 'Custom'}
+                </button>
+              </div>
+              {useCustomSpacing && (
+                <input
+                  type="range"
+                  min={0}
+                  max={60}
+                  step={2}
+                  value={bubbleSpacing}
+                  onChange={(e) => setBubbleSpacing(Number(e.target.value))}
+                  style={{ width: '100%', accentColor: '#0095F6', cursor: 'pointer' }}
+                />
+              )}
+            </div>
+
             {/* Action Buttons */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12, paddingBottom: 6 }}>
               <button
@@ -1034,7 +1249,8 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     photoBorderStyle,
                     photoFit,
                     laserColor,
-                    laserSpeed
+                    laserSpeed,
+                    useCustomSpacing ? bubbleSpacing : undefined
                   );
                   onDismiss();
                 }}
