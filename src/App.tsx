@@ -20,50 +20,9 @@ import { EmojiFontSelectModal } from './components/EmojiFontSelectModal';
 import { LyricsVideoEngineModal } from './components/LyricsVideoEngineModal';
 import { CaptureModeModal } from './components/CaptureModeModal';
 import { ChatSpacingModal } from './components/ChatSpacingModal';
+import { PhotoSendModal } from './components/PhotoSendModal';
 import { captureBubblesScreenshot } from './utils/bubbleCanvasRenderer';
 import { setGlobalEmojiFont } from './data/emojiFonts';
-
-/**
- * Fast client-side image compression to guarantee crisp HD quality
- * while keeping base64 under ~120KB so localStorage quota is never exceeded.
- */
-const compressImageFile = (file: File): Promise<string> => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX_DIM = 800;
-        let width = img.naturalWidth || img.width;
-        let height = img.naturalHeight || img.height;
-        if (width > MAX_DIM || height > MAX_DIM) {
-          if (width > height) {
-            height = Math.round((height * MAX_DIM) / width);
-            width = MAX_DIM;
-          } else {
-            width = Math.round((width * MAX_DIM) / height);
-            height = MAX_DIM;
-          }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.80));
-        } else {
-          resolve((e.target?.result as string) || '/avatars/gaming_post.jpg');
-        }
-      };
-      img.onerror = () => {
-        resolve((e.target?.result as string) || '/avatars/gaming_post.jpg');
-      };
-      img.src = (e.target?.result as string) || '';
-    };
-    reader.readAsDataURL(file);
-  });
-};
 
 export const App: React.FC = () => {
   // Persistence with localStorage
@@ -154,6 +113,7 @@ export const App: React.FC = () => {
   const [showLyricsVideoEngine, setShowLyricsVideoEngine] = useState(false);
   const [showCaptureModeModal, setShowCaptureModeModal] = useState(false);
   const [showSpacingModal, setShowSpacingModal] = useState(false);
+  const [pendingPhotoToSend, setPendingPhotoToSend] = useState<string | null>(null);
 
   // Global Chat Bubble Spacing (Margin / Gap between bubbles in px)
   const [globalBubbleSpacing, setGlobalBubbleSpacing] = useState<number>(() => {
@@ -647,27 +607,22 @@ export const App: React.FC = () => {
                 }
               }}
               onCameraClick={() => {
-                handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
+                setPendingPhotoToSend('/avatars/gaming_post.jpg');
               }}
               onMicClick={() => {
                 handleSendMessage('', activeSender === 'ME', 'AUDIO', undefined, '0:04');
               }}
-              onGalleryClick={async (file) => {
+              onGalleryClick={(file) => {
                 if (file) {
-                  try {
-                    const compressedDataUrl = await compressImageFile(file);
-                    handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', compressedDataUrl);
-                  } catch {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                      if (e.target?.result) {
-                        handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', e.target.result as string);
-                      }
-                    };
-                    reader.readAsDataURL(file);
-                  }
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    if (e.target?.result) {
+                      setPendingPhotoToSend(e.target.result as string);
+                    }
+                  };
+                  reader.readAsDataURL(file);
                 } else {
-                  handleSendMessage('Shared photo', activeSender === 'ME', 'IMAGE', '/avatars/gaming_post.jpg');
+                  setPendingPhotoToSend('/avatars/gaming_post.jpg');
                 }
               }}
               onStickerClick={() => {
@@ -913,6 +868,20 @@ export const App: React.FC = () => {
             onScreenshotCapture={(dataUrl) => {
               setCapturedScreenshotUrl(dataUrl);
             }}
+          />
+        )}
+
+        {/* Modal: Photo Send Preview with MAX Button & 40KB Buffer Protection */}
+        {pendingPhotoToSend && (
+          <PhotoSendModal
+            initialImageSrc={pendingPhotoToSend}
+            activeSender={activeSender}
+            contactName={profile.name}
+            onSendPhoto={(imageDataUrl, isFromMe, caption) => {
+              handleSendMessage(caption || 'Shared photo', isFromMe, 'IMAGE', imageDataUrl);
+              showToast(isFromMe ? 'Photo sent with MAX buffer protection!' : `Received photo from ${profile.name}!`);
+            }}
+            onDismiss={() => setPendingPhotoToSend(null)}
           />
         )}
 

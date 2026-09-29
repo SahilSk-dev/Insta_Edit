@@ -325,9 +325,26 @@ export const InstagramReelEngineIcon: React.FC<IconProps> = ({ size = 23, color 
     <rect x="2" y="3" width="20" height="18" rx="4" />
     <line x1="2" y1="9" x2="22" y2="9" />
     <line x1="6" y1="3" x2="4" y2="9" />
-    <line x1="12" y1="3" x2="10" y2="9" />
-    <line x1="18" y1="3" x2="16" y2="9" />
     <polygon points="10 12.5 15 15 10 17.5 10 12.5" fill={color} stroke="none" />
   </svg>
 );
+
+export const InstagramSendAirplaneIcon: React.FC<IconProps> = ({ size = 20, color = '#FFFFFF', style }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={style}
+  >
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" fillOpacity="0.2" />
+  </svg>
+);
+
+
 
