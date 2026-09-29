@@ -283,7 +283,8 @@ export const App: React.FC = () => {
     imageFit?: 'cover' | 'contain',
     laserColor?: string,
     laserSpeed?: number,
-    customSpacing?: number | null
+    customSpacing?: number | null,
+    audioDuration?: string
   ) => {
     setMessages((prev) =>
       prev.map((msg) =>
@@ -302,7 +303,8 @@ export const App: React.FC = () => {
               imageFit: imageFit !== undefined ? imageFit : msg.imageFit,
               laserColor: laserColor !== undefined ? laserColor : msg.laserColor,
               laserSpeed: laserSpeed !== undefined ? laserSpeed : msg.laserSpeed,
-              customSpacing: customSpacing !== undefined ? (customSpacing === null || customSpacing < 0 ? undefined : customSpacing) : msg.customSpacing
+              customSpacing: customSpacing !== undefined ? (customSpacing === null || customSpacing < 0 ? undefined : customSpacing) : msg.customSpacing,
+              audioDuration: audioDuration !== undefined ? audioDuration : msg.audioDuration
             }
           : msg
       )
@@ -463,8 +465,6 @@ export const App: React.FC = () => {
               {/* Instagram Header with Profile Info */}
               <ChatHeader
                 profile={profile}
-                globalBubbleSpacing={globalBubbleSpacing}
-                onOpenSpacingModal={() => setShowSpacingModal(true)}
                 onSafetyTipsClick={() => setShowSafetyTips(true)}
                 onBlockClick={() => {
                   if (profile.isBlocked) {
@@ -490,41 +490,18 @@ export const App: React.FC = () => {
                 }}
               />
 
-              {/* Centered Conversation Timestamp & Quick Spacing Pill */}
+              {/* Centered Conversation Timestamp (100% Authentic Instagram DM) */}
               <div
                 style={{
                   width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 10,
-                  padding: '12px 0',
+                  textAlign: 'center',
+                  padding: '12px 0 10px 0',
                   color: '#8E8E93',
                   fontSize: 12,
                   userSelect: 'none'
                 }}
               >
-                <span>{profile.chatTimestamp}</span>
-                <button
-                  type="button"
-                  onClick={() => setShowSpacingModal(true)}
-                  title="Adjust distance between chat bubbles"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: 12,
-                    padding: '2px 8px',
-                    color: '#A8A8A8',
-                    fontSize: 11,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4
-                  }}
-                >
-                  <span>↕ Gap:</span>
-                  <span style={{ color: '#0095F6', fontWeight: 700 }}>{globalBubbleSpacing}px</span>
-                </button>
+                {profile.chatTimestamp}
               </div>
 
               {/* Messages list (Wrapped in dedicated ref for clean bubbles-only Screenshot & Video Recording) */}
@@ -765,7 +742,8 @@ export const App: React.FC = () => {
               imageFit,
               laserColor,
               laserSpeed,
-              customSpacing
+              customSpacing,
+              audioDuration
             ) => {
               handleEditMessage(
                 id,
@@ -781,7 +759,8 @@ export const App: React.FC = () => {
                 imageFit,
                 laserColor,
                 laserSpeed,
-                customSpacing
+                customSpacing,
+                audioDuration
               );
               showToast('Updated successfully!');
             }}

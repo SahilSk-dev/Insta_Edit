@@ -195,50 +195,83 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
           </div>
         )}
 
-        {/* Type: AUDIO */}
-        {message.type === 'AUDIO' && (
-          <div
-            style={{
-              width: 'fit-content',
-              minWidth: 150,
-              maxWidth: 210,
-              borderRadius: 18,
-              background: isMe
-                ? 'linear-gradient(135deg, #7038F8 0%, #8A3FFC 50%, #9E27E8 100%)'
-                : '#262626',
-              padding: '8px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-            }}
-          >
+        {/* Type: AUDIO (Authentic Instagram DM Voice Note) */}
+        {message.type === 'AUDIO' && (() => {
+          const waveformBars = [4, 8, 14, 18, 11, 7, 16, 22, 15, 9, 12, 19, 11, 6, 14, 9, 4];
+          return (
             <div
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                width: 'fit-content',
+                minWidth: 165,
+                maxWidth: 225,
+                borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                background: isMe
+                  ? 'linear-gradient(135deg, #7038F8 0%, #8A3FFC 50%, #9E27E8 100%)'
+                  : '#262626',
+                padding: '8px 12px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
+                gap: 10,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                boxSizing: 'border-box'
               }}
             >
-              <PlayIcon size={14} color="#FFFFFF" />
+              {/* Play icon badge */}
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <PlayIcon size={14} color="#FFFFFF" />
+              </div>
+
+              {/* Instagram Voice Waveform Bars */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2.2,
+                  height: 22,
+                  flex: 1
+                }}
+              >
+                {waveformBars.map((barHeight, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      width: 2.4,
+                      height: `${barHeight}px`,
+                      borderRadius: 1.5,
+                      backgroundColor: idx < Math.floor(waveformBars.length * 0.35)
+                        ? '#FFFFFF'
+                        : 'rgba(255, 255, 255, 0.45)'
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Duration */}
+              <div
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  fontVariantNumeric: 'tabular-nums',
+                  flexShrink: 0
+                }}
+              >
+                {message.audioDuration || '0:04'}
+              </div>
             </div>
-            <div
-              style={{
-                marginLeft: 8,
-                color: '#FFFFFF',
-                fontSize: 12.5,
-                fontWeight: 500,
-                letterSpacing: '0.8px'
-              }}
-            >
-              ılılıllı|lıl {message.audioDuration || '0:04'}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Type: TEXT */}
         {message.type === 'TEXT' && (

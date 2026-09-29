@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChatMessage, BubbleTheme, PhotoBorderStyle } from '../types/chat';
-import { EditIcon, DeleteIcon, SwapIcon } from './InstagramIcons';
+import { EditIcon, DeleteIcon, SwapIcon, PlayIcon } from './InstagramIcons';
 import { AestheticLyricsBubble, calculateBubbleLayout, renderBubbleTextWithEmojiFont } from './AestheticBubble';
 import { EmojiFontPreviewDropdown } from './EmojiFontPreviewDropdown';
 
@@ -22,7 +22,8 @@ interface MessageActionModalProps {
     imageFit?: 'cover' | 'contain',
     laserColor?: string,
     laserSpeed?: number,
-    customSpacing?: number
+    customSpacing?: number,
+    audioDuration?: string
   ) => void;
   onUpdateSpacingLive?: (messageId: string, customSpacing?: number) => void;
   onDeleteMessage: (id: string) => void;
@@ -41,6 +42,8 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   onDismiss
 }) => {
   const isImageMessage = message.type === 'IMAGE';
+  const isAudioMessage = message.type === 'AUDIO';
+  const [audioDuration, setAudioDuration] = useState<string>(message.audioDuration || '0:04');
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
   const [editTimestamp, setEditTimestamp] = useState(message.timestamp);
@@ -575,6 +578,251 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                   Save Photo Size & Style
                 </button>
               </div>
+            ) : isAudioMessage ? (
+              /* ================= VOICE MESSAGE CUSTOMIZER ================= */
+              <div
+                style={{
+                  backgroundColor: '#1E1E1E',
+                  borderRadius: 14,
+                  padding: '14px 16px',
+                  marginBottom: 16,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 14,
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 700 }}>
+                    🎙️ Voice Message Settings
+                  </span>
+                  <span
+                    style={{
+                      backgroundColor: '#0095F6',
+                      color: '#FFFFFF',
+                      borderRadius: 12,
+                      padding: '2px 10px',
+                      fontSize: 12,
+                      fontWeight: 700
+                    }}
+                  >
+                    {audioDuration}
+                  </span>
+                </div>
+
+                {/* Interactive Live Preview of Voice Bubble */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '14px 0',
+                    backgroundColor: '#111111',
+                    borderRadius: 12
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 'fit-content',
+                      minWidth: 165,
+                      maxWidth: 225,
+                      borderRadius: editIsMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                      background: editIsMe
+                        ? 'linear-gradient(135deg, #7038F8 0%, #8A3FFC 50%, #9E27E8 100%)'
+                        : '#262626',
+                      padding: '8px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                    >
+                      <PlayIcon size={14} color="#FFFFFF" />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2.2, height: 22, flex: 1 }}>
+                      {[4, 8, 14, 18, 11, 7, 16, 22, 15, 9, 12, 19, 11, 6, 14, 9, 4].map((barHeight, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            width: 2.4,
+                            height: `${barHeight}px`,
+                            borderRadius: 1.5,
+                            backgroundColor: idx < 6 ? '#FFFFFF' : 'rgba(255, 255, 255, 0.45)'
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
+                      {audioDuration}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Duration Presets & Input */}
+                <div>
+                  <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+                    Voice Duration:
+                  </label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {['0:03', '0:05', '0:10', '0:15', '0:30', '1:00', '1:30'].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setAudioDuration(preset)}
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: 8,
+                          backgroundColor: audioDuration === preset ? '#0095F6' : '#262626',
+                          color: audioDuration === preset ? '#FFFFFF' : '#A8A8A8',
+                          border: audioDuration === preset ? '1.5px solid #0095F6' : '1px solid #383838',
+                          fontSize: 12,
+                          fontWeight: audioDuration === preset ? 700 : 500,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={audioDuration}
+                    onChange={(e) => setAudioDuration(e.target.value)}
+                    placeholder="e.g. 0:15"
+                    style={{
+                      width: '100%',
+                      height: 38,
+                      borderRadius: 8,
+                      backgroundColor: '#262626',
+                      border: '1px solid #383838',
+                      color: '#FFFFFF',
+                      padding: '0 10px',
+                      fontSize: 13.5,
+                      boxSizing: 'border-box',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* Sender Selection */}
+                <div>
+                  <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                    Sender:
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditIsMe(true)}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: 8,
+                        backgroundColor: editIsMe ? '#8A3FFC' : '#262626',
+                        color: '#FFFFFF',
+                        border: editIsMe ? '1.5px solid #A855F7' : '1px solid #383838',
+                        fontSize: 13,
+                        fontWeight: editIsMe ? 700 : 500,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Me (You)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditIsMe(false)}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: 8,
+                        backgroundColor: !editIsMe ? '#0095F6' : '#262626',
+                        color: '#FFFFFF',
+                        border: !editIsMe ? '1.5px solid #38BDF8' : '1px solid #383838',
+                        fontSize: 13,
+                        fontWeight: !editIsMe ? 700 : 500,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {contactName} (Received)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Timestamp */}
+                <div>
+                  <label style={{ display: 'block', color: '#A8A8A8', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                    Timestamp:
+                  </label>
+                  <input
+                    type="text"
+                    value={editTimestamp}
+                    onChange={(e) => setEditTimestamp(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: 38,
+                      borderRadius: 8,
+                      backgroundColor: '#262626',
+                      border: '1px solid #383838',
+                      color: '#FFFFFF',
+                      padding: '0 10px',
+                      fontSize: 13.5,
+                      boxSizing: 'border-box',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* Save Button for Voice Settings */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onEditMessage(
+                      message.id,
+                      '',
+                      editTimestamp,
+                      editIsMe,
+                      message.theme,
+                      message.emojiFont,
+                      selectedReaction || undefined,
+                      undefined,
+                      undefined,
+                      undefined,
+                      undefined,
+                      undefined,
+                      undefined,
+                      useCustomSpacing ? bubbleSpacing : undefined,
+                      audioDuration
+                    );
+                    onDismiss();
+                  }}
+                  style={{
+                    backgroundColor: '#0095F6',
+                    color: '#FFFFFF',
+                    borderRadius: 8,
+                    border: 'none',
+                    padding: '11px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    marginTop: 4,
+                    boxShadow: '0 2px 10px rgba(0, 149, 246, 0.4)'
+                  }}
+                >
+                  Save Voice Message
+                </button>
+              </div>
             ) : (
               <>
                 {/* Quick Apply Theme / Overlay */}
@@ -783,7 +1031,23 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
               {/* Swap sender */}
               <div
                 onClick={() => {
-                  onEditMessage(message.id, message.text, message.timestamp, !message.isFromMe, message.theme);
+                  onEditMessage(
+                    message.id,
+                    message.text,
+                    message.timestamp,
+                    !message.isFromMe,
+                    message.theme,
+                    message.emojiFont,
+                    message.reaction,
+                    message.imageWidth,
+                    message.imageHeight,
+                    message.photoStyle,
+                    message.imageFit,
+                    message.laserColor,
+                    message.laserSpeed,
+                    message.customSpacing,
+                    audioDuration || message.audioDuration
+                  );
                   onDismiss();
                 }}
                 style={{

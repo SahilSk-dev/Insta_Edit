@@ -6,24 +6,20 @@ import { CropAvatarModal } from './CropAvatarModal';
 
 interface ChatHeaderProps {
   profile: ChatProfile;
-  globalBubbleSpacing?: number;
   onSafetyTipsClick: () => void;
   onBlockClick: () => void;
   onProfileClick: () => void;
   onChangeAvatar: () => void;
   onDirectAvatarUpload?: (dataUrl: string) => void;
-  onOpenSpacingModal?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
   profile,
-  globalBubbleSpacing = 4,
   onSafetyTipsClick,
   onBlockClick,
   onProfileClick,
   onChangeAvatar,
-  onDirectAvatarUpload,
-  onOpenSpacingModal
+  onDirectAvatarUpload
 }) => {
   const avatarUrl = getAvatarUrl(profile.avatarName);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -152,31 +148,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         >
           View profile
         </button>
-
-        {/* Global Bubble Spacing Pill */}
-        {onOpenSpacingModal && (
-          <button
-            onClick={onOpenSpacingModal}
-            title="Adjust spacing / distance between all chat bubbles"
-            style={{
-              backgroundColor: '#1E1E1E',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: 8,
-              padding: '6px 12px',
-              color: '#D4D4D4',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              userSelect: 'none'
-            }}
-          >
-            <span>↕ Gap:</span>
-            <span style={{ color: '#0095F6', fontWeight: 700 }}>{globalBubbleSpacing}px</span>
-          </button>
-        )}
       </div>
 
       {/* Interactive Crop Popup Modal */}
