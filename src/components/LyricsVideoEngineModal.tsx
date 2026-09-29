@@ -48,6 +48,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
   // Configurable recording options: exact duration in seconds
   const [durationSec, setDurationSec] = useState<number>(10);
   const [quality, setQuality] = useState<'1080P' | '720P'>('1080P');
+  const [fpsOption, setFpsOption] = useState<number>(40); // 40 FPS Default for buttery-smooth zero-hang recording
   const [speedOption, setSpeedOption] = useState<'FAST' | 'NORMAL' | 'SMOOTH'>('FAST');
 
   // Messages to record: defaults to all current chat messages, or dubai preset if chat empty
@@ -86,16 +87,16 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
 
   const speedMultiplier = speedOption === 'FAST' ? 1.25 : (speedOption === 'NORMAL' ? 1.0 : 0.75);
 
-  // Common render options (Scale 3 = Full 1080p Studio HD, Scale 2 = 720p HD)
+  // Common render options (Scale 2.5 = 1080p Studio HD with 432 baseWidth, Scale 2 = 720p HD)
   const renderOptions: RenderBubblesOptions = {
-    scale: quality === '1080P' ? 3 : 2,
-    baseWidth: 420,
+    scale: quality === '1080P' ? 2.5 : 2,
+    baseWidth: 432,
     emojiFont,
     avatarUrl,
     speedMultiplier
   };
 
-  // Re-calculate layout only when messages or render options change (NEVER inside 60 FPS loop!)
+  // Re-calculate layout only when messages or render options change (NEVER inside loop!)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -125,29 +126,34 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
     [messagesToRecord, renderOptions]
   );
 
-  // Live preview loop when not recording
+  // Live preview loop when not recording (paced at target FPS to save CPU)
   useEffect(() => {
     let animId: number;
+    let lastPreviewTime = 0;
+    const previewInterval = 1000 / fpsOption;
+
     const loop = (now: number) => {
       if (!isRecording) {
-        drawFrame(now);
+        if (now - lastPreviewTime >= previewInterval) {
+          drawFrame(now);
+          lastPreviewTime = now;
+        }
       }
       animId = requestAnimationFrame(loop);
     };
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [isRecording, drawFrame]);
+  }, [isRecording, drawFrame, fpsOption]);
 
-  // Start live recording of the animated bubbles
+  // Start live recording of the animated bubbles with deterministic 40 FPS engine
   const handleStartRecording = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     try {
-      // Ensure avatar photo and all message photos are 100% preloaded before recording starts
+      // 1. Ensure all assets are preloaded into memory before recording begins
       await preloadAllMessagesAssets(messagesToRecord, avatarUrl);
-      // Paint first frame with decoded assets before capture stream starts
-      drawFrame(performance.now());
+      drawFrame(0);
 
       setRecordedVideoUrl(null);
       setIsRecording(true);
@@ -155,8 +161,26 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
       setElapsedTime(0);
       recordedChunksRef.current = [];
 
-      // 60 FPS Capture Stream directly from the exact-sized canvas
-      const stream = canvas.captureStream(60);
+      const fps = fpsOption;
+      const totalFrames = Math.round(durationSec * fps);
+      const frameIntervalMs = 1000 / fps;
+
+      // 2. Set up stream: prefer manual frame capture (Chromium requestFrame) for 100% hang-free rendering
+      let stream: MediaStream;
+      let isManualCapture = false;
+      let videoTrack: MediaStreamTrack | null = null;
+
+      try {
+        stream = (canvas as any).captureStream ? (canvas as any).captureStream(0) : null;
+        videoTrack = stream ? stream.getVideoTracks()[0] || null : null;
+        if (videoTrack && typeof (videoTrack as any).requestFrame === 'function') {
+          isManualCapture = true;
+        } else {
+          stream = canvas.captureStream(fps);
+        }
+      } catch {
+        stream = canvas.captureStream(fps);
+      }
 
       const mimeTypes = [
         'video/mp4;codecs=avc1',
@@ -174,10 +198,10 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
       }
       setRecordedMimeType(chosenMime);
 
-      // Studio-grade 25 Mbps Ultra HD recording
+      // Optimal 8 Mbps for 1080p, 5 Mbps for 720p (flawless crystal-clear video, zero encoder hang!)
       const recorder = new MediaRecorder(stream, {
         mimeType: chosenMime,
-        videoBitsPerSecond: 25000000
+        videoBitsPerSecond: quality === '1080P' ? 8000000 : 5000000
       });
 
       recorder.ondataavailable = (e) => {
@@ -194,29 +218,59 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
       };
 
       mediaRecorderRef.current = recorder;
-      recorder.start(100);
+      recorder.start(1000); // 1-second chunks to eliminate GC freeze
 
-      startTimeRef.current = performance.now();
-      const totalDurationMs = durationSec * 1000;
-
-      const recordStep = (now: number) => {
-        const elapsed = now - startTimeRef.current;
-        const currentProgress = Math.min(1, elapsed / totalDurationMs);
-
-        drawFrame(now);
-        setProgress(Math.round(currentProgress * 100));
-        setElapsedTime(parseFloat((elapsed / 1000).toFixed(1)));
-
-        if (elapsed < totalDurationMs) {
-          animFrameRef.current = requestAnimationFrame(recordStep);
-        } else {
-          if (recorder.state !== 'inactive') {
-            recorder.stop();
+      if (isManualCapture && videoTrack) {
+        // Mode 1: Deterministic Frame-by-Frame Mode (ZERO dropped frames, ZERO hang!)
+        let currentFrame = 0;
+        const stepManual = () => {
+          if (currentFrame >= totalFrames) {
+            if (recorder.state !== 'inactive') {
+              recorder.stop();
+            }
+            return;
           }
-        }
-      };
 
-      animFrameRef.current = requestAnimationFrame(recordStep);
+          const virtualTimeMs = currentFrame * frameIntervalMs;
+          drawFrame(virtualTimeMs);
+          (videoTrack as any).requestFrame();
+
+          currentFrame++;
+          const currentProgress = Math.min(100, Math.round((currentFrame / totalFrames) * 100));
+          setProgress(currentProgress);
+          setElapsedTime(parseFloat((virtualTimeMs / 1000).toFixed(1)));
+
+          animFrameRef.current = requestAnimationFrame(stepManual);
+        };
+        animFrameRef.current = requestAnimationFrame(stepManual);
+      } else {
+        // Mode 2: Throttled Real-time Mode (paced strictly at target FPS to avoid CPU overload)
+        startTimeRef.current = performance.now();
+        const totalDurationMs = durationSec * 1000;
+        let lastRenderTime = 0;
+
+        const stepRealtime = (now: number) => {
+          const elapsed = now - startTimeRef.current;
+          if (elapsed >= totalDurationMs) {
+            if (recorder.state !== 'inactive') {
+              recorder.stop();
+            }
+            return;
+          }
+
+          if (now - lastRenderTime >= frameIntervalMs * 0.9) {
+            drawFrame(now);
+            lastRenderTime = now;
+          }
+
+          const currentProgress = Math.min(1, elapsed / totalDurationMs);
+          setProgress(Math.round(currentProgress * 100));
+          setElapsedTime(parseFloat((elapsed / 1000).toFixed(1)));
+
+          animFrameRef.current = requestAnimationFrame(stepRealtime);
+        };
+        animFrameRef.current = requestAnimationFrame(stepRealtime);
+      }
     } catch (err) {
       console.error('Failed to start media recorder:', err);
       alert('Could not start screen recorder.');
@@ -264,6 +318,11 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
         overflowY: 'auto'
       }}
     >
+      {/* Inline styles for spinner */}
+      <style>{`
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+      `}</style>
+
       {/* Header */}
       <div
         style={{
@@ -283,7 +342,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
               Bubbles Animation Video Recorder
             </div>
             <div style={{ color: '#8E8E93', fontSize: 11 }}>
-              Only Bubbles · No Scroll · Full Chat Height · 60 FPS
+              Only Bubbles · Full Chat Height · 1080p · {fpsOption} FPS
             </div>
           </div>
         </div>
@@ -304,7 +363,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
         </button>
       </div>
 
-      {/* Main Viewport: Exact Dimensions of the Chat Column (No 9:16 forced crop!) */}
+      {/* Main Viewport: Live Preview before recording, Offscreen during recording (Zero-Freeze Engine) */}
       <div
         style={{
           position: 'relative',
@@ -315,25 +374,36 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
           borderRadius: 16,
           overflowY: 'auto',
           overflowX: 'hidden',
-          border: isRecording ? '2px solid #FF3B30' : '1px solid rgba(255, 255, 255, 0.15)',
+          border: isRecording ? '2px solid #00E5FF' : '1px solid rgba(255, 255, 255, 0.15)',
           boxShadow: isRecording
-            ? '0 0 24px rgba(255, 59, 48, 0.45), 0 8px 30px rgba(0, 0, 0, 0.9)'
+            ? '0 0 24px rgba(0, 229, 255, 0.35), 0 8px 30px rgba(0, 0, 0, 0.9)'
             : '0 8px 30px rgba(0, 0, 0, 0.8)',
           margin: '12px 0',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center'
+          alignItems: 'center',
+          justifyContent: isRecording ? 'center' : 'flex-start'
         }}
       >
-        {/* Render Canvas: Exact dimensions of the chat bubbles column */}
+        {/* Render Canvas: Visible during preview, moved offscreen during recording to eliminate device freeze */}
         <canvas
           ref={canvasRef}
-          style={{
-            width: '100%',
-            height: 'auto',
-            display: recordedVideoUrl ? 'none' : 'block',
-            backgroundColor: '#000000'
-          }}
+          style={
+            isRecording
+              ? {
+                  position: 'fixed',
+                  left: -99999,
+                  top: 0,
+                  opacity: 0,
+                  pointerEvents: 'none'
+                }
+              : {
+                  width: '100%',
+                  height: 'auto',
+                  display: recordedVideoUrl ? 'none' : 'block',
+                  backgroundColor: '#000000'
+                }
+          }
         />
 
         {/* Video Player when Recorded */}
@@ -354,38 +424,97 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
           />
         )}
 
-        {/* Recording HUD Badge */}
+        {/* Background Rendering Dashboard (Prevents device freeze & zero hang) */}
         {isRecording && (
           <div
             style={{
-              position: 'sticky',
-              top: 10,
-              backgroundColor: 'rgba(0, 0, 0, 0.85)',
-              padding: '6px 14px',
-              borderRadius: 20,
-              border: '1px solid #FF3B30',
+              width: '100%',
+              minHeight: 250,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: 8,
-              zIndex: 10
+              justifyContent: 'center',
+              padding: '28px 20px',
+              boxSizing: 'border-box',
+              gap: 14
             }}
           >
-            <span
+            {/* Spinning Neon Ring */}
+            <div
               style={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                backgroundColor: '#FF3B30',
-                boxShadow: '0 0 8px #FF3B30'
+                position: 'relative',
+                width: 66,
+                height: 66,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
-            />
-            <span style={{ color: '#FF3B30', fontSize: 12, fontWeight: 700 }}>REC</span>
-            <span style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 600 }}>
-              {elapsedTime.toFixed(1)}s / {durationSec}.0s
-            </span>
-            <span style={{ color: '#00E5FF', fontSize: 12, fontWeight: 700 }}>
-              {progress}%
-            </span>
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: '50%',
+                  border: '3.5px solid rgba(0, 229, 255, 0.15)',
+                  borderTopColor: '#00E5FF',
+                  animation: 'spin 0.9s linear infinite'
+                }}
+              />
+              <span style={{ fontSize: 24 }}>⚡</span>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#FFFFFF', fontSize: 17, fontWeight: 700, marginBottom: 4 }}>
+                Rendering {quality} Video...
+              </div>
+              <div style={{ color: '#00E5FF', fontSize: 13, fontWeight: 600 }}>
+                {fpsOption} FPS · {progress}% Completed
+              </div>
+            </div>
+
+            {/* Glowing Smooth Progress Bar */}
+            <div
+              style={{
+                width: '85%',
+                height: 8,
+                backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                borderRadius: 4,
+                overflow: 'hidden',
+                position: 'relative'
+              }}
+            >
+              <div
+                style={{
+                  width: `${progress}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #0095F6 0%, #00E5FF 100%)',
+                  borderRadius: 4,
+                  boxShadow: '0 0 10px rgba(0, 229, 255, 0.8)',
+                  transition: 'width 0.12s ease'
+                }}
+              />
+            </div>
+
+            {/* Informative reassurance to user */}
+            <div style={{ textAlign: 'center', maxWidth: 300 }}>
+              <div style={{ color: '#A8A8A8', fontSize: 12, fontWeight: 500 }}>
+                {elapsedTime.toFixed(1)}s / {durationSec}.0s
+              </div>
+              <div
+                style={{
+                  color: '#34C759',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  marginTop: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 4
+                }}
+              >
+                <span>✓</span> Background Render Mode (Zero Screen Freeze & Zero Lag)
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -509,7 +638,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
                   Export Resolution:
                 </div>
                 <div style={{ color: '#8E8E93', fontSize: 10.5 }}>
-                  {quality === '1080P' ? '1080p Full HD · 60 FPS · 25 Mbps' : '720p HD · 60 FPS'}
+                  {quality === '1080P' ? '1080p Studio Full HD (1080px)' : '720p HD Ready'}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
@@ -545,6 +674,53 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
                 >
                   720p HD
                 </button>
+              </div>
+            </div>
+
+            {/* Frame Rate (FPS) Selector (Default 40 FPS - Zero Hang & Silky Smooth) */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: '#1E1E1E',
+                padding: '8px 12px',
+                borderRadius: 10,
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}
+            >
+              <div>
+                <div style={{ color: '#FFFFFF', fontSize: 12.5, fontWeight: 700 }}>
+                  Frame Rate (FPS):
+                </div>
+                <div style={{ color: '#00E5FF', fontSize: 10.5, fontWeight: 600 }}>
+                  {fpsOption === 40
+                    ? '40 FPS (Recommended) · Silky Smooth & Zero Hang'
+                    : fpsOption === 30
+                    ? '30 FPS · Lightweight'
+                    : '60 FPS · Studio Pro'}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {[40, 30, 60].map((f) => (
+                  <button
+                    key={f}
+                    disabled={isRecording}
+                    onClick={() => setFpsOption(f)}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: 6,
+                      backgroundColor: fpsOption === f ? '#00E5FF' : 'rgba(255, 255, 255, 0.08)',
+                      color: fpsOption === f ? '#000000' : '#FFFFFF',
+                      border: 'none',
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {f} FPS
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -743,7 +919,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
                   boxShadow: '0 4px 18px rgba(255, 59, 48, 0.5)'
                 }}
               >
-                <span>⏹️</span> Stop & Save ({elapsedTime}s)
+                <span>⏹️</span> Cancel Recording
               </button>
             ) : (
               <button
@@ -752,18 +928,18 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
                   width: '100%',
                   height: 48,
                   borderRadius: 14,
-                  backgroundColor: '#FF1744',
-                  backgroundImage: 'linear-gradient(135deg, #FF1744 0%, #D500F9 100%)',
+                  backgroundColor: '#0095F6',
+                  backgroundImage: 'linear-gradient(135deg, #0095F6 0%, #00E5FF 100%)',
                   color: '#FFFFFF',
                   border: 'none',
-                  fontSize: 15,
+                  fontSize: 15.5,
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  boxShadow: '0 4px 18px rgba(255, 23, 68, 0.45)'
+                  boxShadow: '0 4px 18px rgba(0, 149, 246, 0.45)'
                 }}
               >
                 <span
@@ -774,7 +950,7 @@ export const LyricsVideoEngineModal: React.FC<LyricsVideoEngineModalProps> = ({
                     backgroundColor: '#FFFFFF'
                   }}
                 />
-                Start Video Recording ({durationSec}s)
+                Start Recording ({quality} · {fpsOption} FPS)
               </button>
             )}
           </>

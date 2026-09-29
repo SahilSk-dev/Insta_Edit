@@ -1163,8 +1163,6 @@ export const drawBubbleToCanvas = (
 
   // 2. FOR THEMED AESTHETIC BUBBLES: Crisp clean black base outline
   ctx.save();
-  ctx.shadowColor = cfg.glowColor;
-  ctx.shadowBlur = 1 * scale;
   ctx.fillStyle = '#000000';
   ctx.fill(outerPath);
   ctx.restore();
@@ -1321,8 +1319,8 @@ export const renderBubblesToCanvas = (
   const layout = cachedLayout || calculateBubblesColumnLayout(ctx, messages, options);
   const { bubbles, totalHeight, canvasWidth } = layout;
 
-  const targetW = Math.round(canvasWidth);
-  const targetH = Math.round(totalHeight);
+  const targetW = Math.round(canvasWidth / 2) * 2;
+  const targetH = Math.round(totalHeight / 2) * 2;
 
   if (canvas.width !== targetW) {
     canvas.width = targetW;
