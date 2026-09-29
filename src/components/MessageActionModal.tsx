@@ -24,6 +24,7 @@ interface MessageActionModalProps {
     laserSpeed?: number,
     customSpacing?: number
   ) => void;
+  onUpdateSpacingLive?: (messageId: string, customSpacing?: number) => void;
   onDeleteMessage: (id: string) => void;
   onReactEmoji: (emoji: string) => void;
   onDismiss: () => void;
@@ -34,6 +35,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
   contactName = 'Sahil',
   globalSpacing = 4,
   onEditMessage,
+  onUpdateSpacingLive,
   onDeleteMessage,
   onReactEmoji,
   onDismiss
@@ -684,24 +686,10 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     if (useCustomSpacing) {
                       setUseCustomSpacing(false);
                       setBubbleSpacing(globalSpacing ?? 4);
-                      onEditMessage(
-                        message.id,
-                        message.text,
-                        message.timestamp,
-                        message.isFromMe,
-                        message.theme,
-                        message.emojiFont,
-                        message.reaction,
-                        photoWidth,
-                        isAutoHeight ? undefined : photoHeight,
-                        photoBorderStyle,
-                        photoFit,
-                        laserColor,
-                        laserSpeed,
-                        undefined // Reset to global
-                      );
+                      onUpdateSpacingLive?.(message.id, undefined);
                     } else {
                       setUseCustomSpacing(true);
+                      onUpdateSpacingLive?.(message.id, bubbleSpacing);
                     }
                   }}
                   style={{
@@ -721,7 +709,7 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
 
               {useCustomSpacing && (
                 <>
-                  <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                     {[
                       { label: '0px (Attached)', val: 0 },
                       { label: '4px (Normal)', val: 4 },
@@ -733,30 +721,16 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                         type="button"
                         onClick={() => {
                           setBubbleSpacing(sp.val);
-                          onEditMessage(
-                            message.id,
-                            message.text,
-                            message.timestamp,
-                            message.isFromMe,
-                            message.theme,
-                            message.emojiFont,
-                            message.reaction,
-                            photoWidth,
-                            isAutoHeight ? undefined : photoHeight,
-                            photoBorderStyle,
-                            photoFit,
-                            laserColor,
-                            laserSpeed,
-                            sp.val
-                          );
+                          onUpdateSpacingLive?.(message.id, sp.val);
                         }}
                         style={{
-                          padding: '4px 6px',
+                          padding: '5px 4px',
                           borderRadius: 6,
                           backgroundColor: bubbleSpacing === sp.val ? '#0095F6' : '#262626',
                           color: bubbleSpacing === sp.val ? '#FFFFFF' : '#A8A8A8',
                           border: 'none',
-                          fontSize: 10.5,
+                          fontSize: 11,
+                          fontWeight: bubbleSpacing === sp.val ? 700 : 500,
                           cursor: 'pointer',
                           flex: 1
                         }}
@@ -769,29 +743,19 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     type="range"
                     min={0}
                     max={60}
-                    step={2}
+                    step={1}
                     value={bubbleSpacing}
                     onChange={(e) => {
                       const val = Number(e.target.value);
                       setBubbleSpacing(val);
-                      onEditMessage(
-                        message.id,
-                        message.text,
-                        message.timestamp,
-                        message.isFromMe,
-                        message.theme,
-                        message.emojiFont,
-                        message.reaction,
-                        photoWidth,
-                        isAutoHeight ? undefined : photoHeight,
-                        photoBorderStyle,
-                        photoFit,
-                        laserColor,
-                        laserSpeed,
-                        val
-                      );
+                      onUpdateSpacingLive?.(message.id, val);
                     }}
-                    style={{ width: '100%', accentColor: '#0095F6', cursor: 'pointer' }}
+                    onInput={(e) => {
+                      const val = Number((e.target as HTMLInputElement).value);
+                      setBubbleSpacing(val);
+                      onUpdateSpacingLive?.(message.id, val);
+                    }}
+                    style={{ width: '100%', height: 8, accentColor: '#0095F6', cursor: 'pointer', touchAction: 'pan-x' }}
                   />
                 </>
               )}
@@ -854,6 +818,26 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                   Unsend / Delete Message
                 </span>
               </div>
+
+              {/* Done Button */}
+              <button
+                type="button"
+                onClick={onDismiss}
+                style={{
+                  marginTop: 14,
+                  width: '100%',
+                  backgroundColor: '#262626',
+                  color: '#FFFFFF',
+                  borderRadius: 10,
+                  border: '1px solid #383838',
+                  padding: '10px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Done
+              </button>
             </div>
           </>
         ) : (
@@ -1186,8 +1170,10 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                     if (useCustomSpacing) {
                       setUseCustomSpacing(false);
                       setBubbleSpacing(globalSpacing ?? 4);
+                      onUpdateSpacingLive?.(message.id, undefined);
                     } else {
                       setUseCustomSpacing(true);
+                      onUpdateSpacingLive?.(message.id, bubbleSpacing);
                     }
                   }}
                   style={{
@@ -1209,10 +1195,19 @@ export const MessageActionModal: React.FC<MessageActionModalProps> = ({
                   type="range"
                   min={0}
                   max={60}
-                  step={2}
+                  step={1}
                   value={bubbleSpacing}
-                  onChange={(e) => setBubbleSpacing(Number(e.target.value))}
-                  style={{ width: '100%', accentColor: '#0095F6', cursor: 'pointer' }}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setBubbleSpacing(val);
+                    onUpdateSpacingLive?.(message.id, val);
+                  }}
+                  onInput={(e) => {
+                    const val = Number((e.target as HTMLInputElement).value);
+                    setBubbleSpacing(val);
+                    onUpdateSpacingLive?.(message.id, val);
+                  }}
+                  style={{ width: '100%', height: 8, accentColor: '#0095F6', cursor: 'pointer', touchAction: 'pan-x' }}
                 />
               )}
             </div>

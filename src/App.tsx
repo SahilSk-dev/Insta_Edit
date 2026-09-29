@@ -181,6 +181,27 @@ export const App: React.FC = () => {
     showToast(`All bubble gaps reset to ${globalBubbleSpacing}px!`);
   };
 
+  const handleUpdateMessageSpacing = (messageId: string, spacing?: number) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId
+          ? {
+              ...msg,
+              customSpacing: spacing !== undefined && spacing >= 0 ? spacing : undefined
+            }
+          : msg
+      )
+    );
+    setSelectedMessageForAction((prev) =>
+      prev && prev.id === messageId
+        ? {
+            ...prev,
+            customSpacing: spacing !== undefined && spacing >= 0 ? spacing : undefined
+          }
+        : prev
+    );
+  };
+
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -729,6 +750,7 @@ export const App: React.FC = () => {
             message={selectedMessageForAction}
             contactName={profile.name}
             globalSpacing={globalBubbleSpacing}
+            onUpdateSpacingLive={handleUpdateMessageSpacing}
             onEditMessage={(
               id,
               text,
@@ -761,7 +783,6 @@ export const App: React.FC = () => {
                 laserSpeed,
                 customSpacing
               );
-              setSelectedMessageForAction(null);
               showToast('Updated successfully!');
             }}
             onDeleteMessage={(id) => {

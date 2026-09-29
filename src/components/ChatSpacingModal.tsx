@@ -100,11 +100,13 @@ export const ChatSpacingModal: React.FC<ChatSpacingModalProps> = ({
             step={1}
             value={currentSpacing}
             onChange={(e) => onUpdateSpacing(Number(e.target.value))}
+            onInput={(e) => onUpdateSpacing(Number((e.target as HTMLInputElement).value))}
             style={{
               width: '100%',
-              height: 6,
+              height: 8,
               accentColor: '#0095F6',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              touchAction: 'pan-x'
             }}
           />
         </div>
